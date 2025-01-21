@@ -47,8 +47,6 @@
 extern const uint8_t qjsc_repl[];
 extern const uint32_t qjsc_repl_size;
 #ifdef CONFIG_BIGNUM
-extern const uint8_t qjsc_qjscalc[];
-extern const uint32_t qjsc_qjscalc_size;
 static int bignum_ext;
 #endif
 
@@ -271,29 +269,28 @@ static const JSMallocFunctions trace_mf = {
     js_trace_malloc_usable_size,
 };
 
-#define PROG_NAME "qjs"
+#define PROG_NAME "ptkl"
 
 void help(void)
 {
-    printf("QuickJS version " CONFIG_VERSION "\n"
+    printf("Partikle Runtime (version " CONFIG_VERSION ")\n"
            "usage: " PROG_NAME " [options] [file [args]]\n"
-           "-h  --help         list options\n"
-           "-e  --eval EXPR    evaluate EXPR\n"
-           "-i  --interactive  go to interactive mode\n"
-           "-m  --module       load as ES6 module (default=autodetect)\n"
-           "    --script       load as ES6 script (default=autodetect)\n"
-           "-I  --include file include an additional file\n"
-           "    --std          make 'std' and 'os' available to the loaded script\n"
-#ifdef CONFIG_BIGNUM
-           "    --bignum       enable the bignum extensions (BigFloat, BigDecimal)\n"
-           "    --qjscalc      load the QJSCalc runtime (default if invoked as qjscalc)\n"
-#endif
-           "-T  --trace        trace memory allocation\n"
-           "-d  --dump         dump the memory usage stats\n"
+           "-h  --help                 list options\n"
+           "-e  --eval EXPR            evaluate EXPR\n"
+//           "-m  --module               load as ES6 module (default=autodetect)\n"
+//           "    --script               load as ES6 script (default=autodetect)\n"
+//           "-I  --include file         include an additional file\n"
+           "    --std                  make 'std' and 'os' available to the loaded script\n"
+//#ifdef CONFIG_BIGNUM
+//           "    --bignum               enable the bignum extensions (BigFloat, BigDecimal)\n"
+//#endif
+           "-T  --trace                trace memory allocation\n"
+           "-d  --dump                 dump the memory usage stats\n"
            "    --memory-limit n       limit the memory usage to 'n' bytes\n"
            "    --stack-size n         limit the stack size to 'n' bytes\n"
            "    --unhandled-rejection  dump unhandled promise rejections\n"
-           "-q  --quit         just instantiate the interpreter and quit\n");
+//           "-q  --quit                 just instantiate the interpreter and quit\n"
+	       );
     exit(1);
 }
 
@@ -308,28 +305,13 @@ int main(int argc, char **argv)
     int dump_memory = 0;
     int trace_memory = 0;
     int empty_run = 0;
-    int module = -1;
+    int module = 1; //-1;
     int load_std = 0;
     int dump_unhandled_promise_rejection = 0;
     size_t memory_limit = 0;
     char *include_list[32];
     int i, include_count = 0;
-#ifdef CONFIG_BIGNUM
-    int load_jscalc;
-#endif
     size_t stack_size = 0;
-
-#ifdef CONFIG_BIGNUM
-    /* load jscalc runtime if invoked as 'qjscalc' */
-    {
-        const char *p, *exename;
-        exename = argv[0];
-        p = strrchr(exename, '/');
-        if (p)
-            exename = p + 1;
-        load_jscalc = !strcmp(exename, "qjscalc");
-    }
-#endif
 
     /* cannot use getopt because we want to pass the command line to
        the script */
@@ -380,18 +362,14 @@ int main(int argc, char **argv)
                 include_list[include_count++] = argv[optind++];
                 continue;
             }
-            if (opt == 'i' || !strcmp(longopt, "interactive")) {
-                interactive++;
-                continue;
-            }
-            if (opt == 'm' || !strcmp(longopt, "module")) {
-                module = 1;
-                continue;
-            }
-            if (!strcmp(longopt, "script")) {
-                module = 0;
-                continue;
-            }
+//            if (opt == 'm' || !strcmp(longopt, "module")) {
+//                module = 1;
+//                continue;
+//            }
+//            if (!strcmp(longopt, "script")) {
+//                module = 0;
+//                continue;
+//            }
             if (opt == 'd' || !strcmp(longopt, "dump")) {
                 dump_memory++;
                 continue;
@@ -411,10 +389,6 @@ int main(int argc, char **argv)
 #ifdef CONFIG_BIGNUM
             if (!strcmp(longopt, "bignum")) {
                 bignum_ext = 1;
-                continue;
-            }
-            if (!strcmp(longopt, "qjscalc")) {
-                load_jscalc = 1;
                 continue;
             }
 #endif
@@ -447,11 +421,6 @@ int main(int argc, char **argv)
         }
     }
 
-#ifdef CONFIG_BIGNUM
-    if (load_jscalc)
-        bignum_ext = 1;
-#endif
-
     if (trace_memory) {
         js_trace_malloc_init(&trace_data);
         rt = JS_NewRuntime2(&trace_mf, &trace_data);
@@ -483,11 +452,6 @@ int main(int argc, char **argv)
     }
 
     if (!empty_run) {
-#ifdef CONFIG_BIGNUM
-        if (load_jscalc) {
-            js_std_eval_binary(ctx, qjsc_qjscalc, qjsc_qjscalc_size, 0);
-        }
-#endif
         js_std_add_helpers(ctx, argc - optind, argv + optind);
 
         /* make 'std' and 'os' visible to non module code */
