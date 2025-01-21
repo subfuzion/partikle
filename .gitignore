@@ -12,6 +12,7 @@ qjs
 qjsc
 qjscalc
 qjscalc.c
+ptkl
 repl.c
 run-test262
 test262

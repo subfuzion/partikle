@@ -1,9 +1,8 @@
 #
-# Partikle runtime
+# QuickJS Javascript Engine
 #
 # Copyright (c) 2017-2021 Fabrice Bellard
 # Copyright (c) 2017-2021 Charlie Gordon
-# Copyright (c) 2025 Tony Pujals
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -193,7 +192,7 @@ CONFIG_SHARED_LIBS=y # building shared libraries is supported
 endif
 endif
 
-PROGS=ptkl$(EXE) qjsc$(EXE) run-test262
+PROGS=qjs$(EXE) qjsc$(EXE) run-test262
 ifneq ($(CROSS_PREFIX),)
 QJSC_CC=gcc
 QJSC=./host-qjsc
@@ -227,11 +226,11 @@ endif
 endif
 endif
 
-all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/ptkl.check.o $(PROGS)
+all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/qjs.check.o $(PROGS)
 
 QJS_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
 
-QJS_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/repl.o $(QJS_LIB_OBJS)
+QJS_OBJS=$(OBJDIR)/qjs.o $(OBJDIR)/repl.o $(QJS_LIB_OBJS)
 ifdef CONFIG_BIGNUM
 QJS_OBJS+=$(OBJDIR)/qjscalc.o
 endif
@@ -246,10 +245,10 @@ LIBS+=$(EXTRA_LIBS)
 $(OBJDIR):
 	mkdir -p $(OBJDIR) $(OBJDIR)/examples $(OBJDIR)/tests
 
-ptkl$(EXE): $(QJS_OBJS)
+qjs$(EXE): $(QJS_OBJS)
 	$(CC) $(LDFLAGS) $(LDEXPORT) -o $@ $^ $(LIBS)
 
-ptkl-debug$(EXE): $(patsubst %.o, %.debug.o, $(QJS_OBJS))
+qjs-debug$(EXE): $(patsubst %.o, %.debug.o, $(QJS_OBJS))
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 qjsc$(EXE): $(OBJDIR)/qjsc.o $(QJS_LIB_OBJS)
@@ -290,7 +289,7 @@ qjs32_s: $(patsubst %.o, %.m32s.o, $(QJS_OBJS))
 	$(CC) -m32 $(LDFLAGS) -o $@ $^ $(LIBS)
 	@size $@
 
-qjscalc: ptkl
+qjscalc: qjs
 	ln -sf $< $@
 
 ifdef CONFIG_LTO
@@ -382,9 +381,9 @@ clean:
 
 install: all
 	mkdir -p "$(DESTDIR)$(PREFIX)/bin"
-	$(STRIP) ptkl$(EXE) qjsc$(EXE)
-	install -m755 ptkl$(EXE) qjsc$(EXE) "$(DESTDIR)$(PREFIX)/bin"
-	ln -sf ptkl$(EXE) "$(DESTDIR)$(PREFIX)/bin/qjscalc$(EXE)"
+	$(STRIP) qjs$(EXE) qjsc$(EXE)
+	install -m755 qjs$(EXE) qjsc$(EXE) "$(DESTDIR)$(PREFIX)/bin"
+	ln -sf qjs$(EXE) "$(DESTDIR)$(PREFIX)/bin/qjscalc$(EXE)"
 	mkdir -p "$(DESTDIR)$(PREFIX)/lib/quickjs"
 	install -m644 libquickjs.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
 ifdef CONFIG_LTO
@@ -464,26 +463,26 @@ ifdef CONFIG_M32
 test: qjs32
 endif
 
-test: ptkl
-	./ptkl tests/test_closure.js
-	./ptkl tests/test_language.js
-	./ptkl --std tests/test_builtin.js
-	./ptkl tests/test_loop.js
-	./ptkl tests/test_bignum.js
-	./ptkl tests/test_std.js
-	./ptkl tests/test_worker.js
+test: qjs
+	./qjs tests/test_closure.js
+	./qjs tests/test_language.js
+	./qjs --std tests/test_builtin.js
+	./qjs tests/test_loop.js
+	./qjs tests/test_bignum.js
+	./qjs tests/test_std.js
+	./qjs tests/test_worker.js
 ifdef CONFIG_SHARED_LIBS
 ifdef CONFIG_BIGNUM
-	./ptkl --bignum tests/test_bjson.js
+	./qjs --bignum tests/test_bjson.js
 else
-	./ptkl tests/test_bjson.js
+	./qjs tests/test_bjson.js
 endif
-	./ptkl examples/test_point.js
+	./qjs examples/test_point.js
 endif
 ifdef CONFIG_BIGNUM
-	./ptkl --bignum tests/test_op_overloading.js
-	./ptkl --bignum tests/test_bigfloat.js
-	./ptkl --qjscalc tests/test_qjscalc.js
+	./qjs --bignum tests/test_op_overloading.js
+	./qjs --bignum tests/test_bigfloat.js
+	./qjs --qjscalc tests/test_qjscalc.js
 endif
 ifdef CONFIG_M32
 	./qjs32 tests/test_closure.js
@@ -500,12 +499,12 @@ ifdef CONFIG_BIGNUM
 endif
 endif
 
-stats: ptkl qjs32
-	./ptkl -qd
+stats: qjs qjs32
+	./qjs -qd
 	./qjs32 -qd
 
-microbench: ptkl
-	./ptkl --std tests/microbench.js
+microbench: qjs
+	./qjs --std tests/microbench.js
 
 microbench-32: qjs32
 	./qjs32 --std tests/microbench.js
@@ -563,9 +562,9 @@ node-microbench:
 	node tests/microbench.js -s microbench-node.txt
 	node --jitless tests/microbench.js -s microbench-node-jitless.txt
 
-bench-v8: ptkl
+bench-v8: qjs
 	make -C tests/bench-v8
-	./ptkl -d tests/bench-v8/combined.js
+	./qjs -d tests/bench-v8/combined.js
 
 node-bench-v8:
 	make -C tests/bench-v8
