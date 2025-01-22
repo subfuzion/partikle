@@ -1699,7 +1699,11 @@ void JS_SetRuntimeOpaque(JSRuntime *rt, void *opaque)
     rt->user_opaque = opaque;
 }
 
-/* default memory allocation functions with memory limitation */
+/* default memory allocation functions with memory limitation
+ * Ignore maybe-uninitialized warnings; the only callers are in this
+ * file and they all ensure an initialized pointer before calling
+ */
+_Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
 static size_t js_def_malloc_usable_size(const void *ptr)
 {
 #if defined(__APPLE__)
