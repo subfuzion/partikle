@@ -91,7 +91,7 @@ import * as os from "os";
     var pstate = "";
     var prompt = "";
     var plen = 0;
-    var ps1 = "qjs > ";
+    var ps1 = "ptkl> ";
     var ps2 = "  ... ";
     var utf8 = true;
     var show_time = false;
@@ -1146,7 +1146,7 @@ import * as os from "os";
                 std.puts("Invalid mode\n");
             }
             return false;
-        } else if (cmd === "clear") {
+        } else if (cmd === "c") {
             std.puts("\x1b[H\x1b[J");
         } else if (cmd === "q") {
             std.exit(0);
@@ -1200,13 +1200,13 @@ import * as os from "os";
 
     function help() {
         function sel(n) {
-            return n ? "*": " ";
+            return n ? "✔︎": " ";
         }
-        std.puts("\\h          this help\n" +
+        std.puts("\\h          help\n" +
                  "\\x         " + sel(hex_mode) + "hexadecimal number display\n" +
                  "\\d         " + sel(!hex_mode) + "decimal number display\n" +
                  "\\t         " + sel(show_time) + "toggle timing display\n" +
-                  "\\clear      clear the terminal\n");
+                  "\\c          clear terminal\n");
         if (has_jscalc) {
             std.puts("\\a         " + sel(algebraicMode) + "algebraic mode\n" +
                      "\\n         " + sel(!algebraicMode) + "numeric mode\n");
@@ -1225,10 +1225,7 @@ import * as os from "os";
 
     function cmd_start() {
         if (!config_numcalc) {
-            if (has_jscalc)
-                std.puts('QJSCalc - Type "\\h" for help\n');
-            else
-                std.puts('QuickJS - Type "\\h" for help\n');
+            std.puts('Partikle REPL. Type "\\h" for help\n');
         }
         if (has_bignum) {
             log2_10 = Math.log(10) / Math.log(2);
