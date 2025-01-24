@@ -308,7 +308,8 @@ int parse_args(const int argc, char **argv, struct parse_opts *opts) {
     opts->dump_memory = 0;
     opts->trace_memory = 0;
     opts->empty_run = 0;
-    opts->module = 1; //-1;
+    // TODO: can't make module the default yet due to tests/test_closure.js::test_with()
+    opts->module = -1;
     opts->load_std = 1; // 0
     opts->dump_unhandled_promise_rejection = 0;
     opts->memory_limit = 0;

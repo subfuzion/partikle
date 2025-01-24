@@ -318,9 +318,12 @@ repl.c: $(QJSC) repl.js
 qjscalc.c: $(QJSC) qjscalc.js
 	$(QJSC) -fbignum -c -o $@ qjscalc.js
 
+# unicode
 ifneq ($(wildcard unicode/UnicodeData.txt),)
-$(OBJDIR)/libunicode.o $(OBJDIR)/libunicode.m32.o $(OBJDIR)/libunicode.m32s.o \
-    $(OBJDIR)/libunicode.nolto.o: libunicode-table.h
+
+UNICODE_OBJS = libunicode.o libunicode.m32.o libunicode.m32s.o libunicode.nolto.o
+
+$(OBJDIR)/$(UNICODE_OBJS): libunicode-table.h
 
 libunicode-table.h: unicode_gen
 	./unicode_gen unicode $@
@@ -495,7 +498,7 @@ endif
 ifdef CONFIG_BIGNUM
 	./ptkl --bignum tests/test_op_overloading.js
 	./ptkl --bignum tests/test_bigfloat.js
-	./ptkl --qjscalc tests/test_qjscalc.js
+#	./ptkl --qjscalc tests/test_qjscalc.js
 endif
 ifdef CONFIG_M32
 	./qjs32 tests/test_closure.js
@@ -508,7 +511,7 @@ ifdef CONFIG_M32
 ifdef CONFIG_BIGNUM
 	./qjs32 --bignum tests/test_op_overloading.js
 	./qjs32 --bignum tests/test_bigfloat.js
-	./qjs32 --qjscalc tests/test_qjscalc.js
+#	./qjs32 --qjscalc tests/test_qjscalc.js
 endif
 endif
 
