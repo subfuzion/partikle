@@ -445,7 +445,7 @@ DOCS=doc/quickjs.pdf doc/quickjs.html doc/jsbignum.pdf doc/jsbignum.html
 build_doc: $(DOCS)
 
 clean_doc:
-	rm -f $(DOCS)
+	rm -f $(DOCS) $(EPUB)
 
 doc/%.pdf: doc/%.texi
 	texi2pdf --clean -o $@ -q $<
@@ -455,6 +455,16 @@ doc/%.html.pre: doc/%.texi
 
 doc/%.html: doc/%.html.pre
 	sed -e 's|</style>|</style>\n<meta name="viewport" content="width=device-width, initial-scale=1.0">|' < $< > $@
+
+# Separate from DOCS because of extra dependency required to generate epub:
+# Archive::Zip (macports: p5.34-archive-zip)
+EPUB=doc/quickjs.epub doc/jsbignum.epub
+
+epub: $(EPUB)
+
+doc/%.epub: doc/%.texi
+	texi2any --epub3 -o $@ $<
+
 
 ###############################################################################
 # tests
