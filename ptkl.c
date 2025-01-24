@@ -28,7 +28,6 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -46,6 +45,8 @@
 extern const uint8_t qjsc_repl[];
 extern const uint32_t qjsc_repl_size;
 
+// Automatically compiled with ecmascript standard bigint support, so this
+// just disables non-standard bigdecimal, bigfloat, and related extensions
 static int bignum_ext = 0;
 
 static int eval_buf(JSContext *ctx, const void *buf, const size_t buf_len,
@@ -126,8 +127,8 @@ struct trace_malloc_data {
 };
 
 static unsigned long long js_trace_malloc_ptr_offset(const uint8_t *ptr,
-                                                     const struct
-                                                     trace_malloc_data *dp) {
+    const struct
+    trace_malloc_data *dp) {
     return ptr - dp->base;
 }
 
