@@ -35,8 +35,6 @@ endif
 #CONFIG_LTO=y
 # consider warnings as errors (for development)
 #CONFIG_WERROR=y
-# force 32 bit build for some utilities
-#CONFIG_M32=y
 # cosmopolitan build (see https://github.com/jart/cosmopolitan)
 #CONFIG_COSMO=y
 
@@ -80,11 +78,7 @@ CONFIG_LTO=
 endif
 
 ifdef CONFIG_WIN32
-  ifdef CONFIG_M32
-    CROSS_PREFIX?=i686-w64-mingw32-
-  else
-    CROSS_PREFIX?=x86_64-w64-mingw32-
-  endif
+  CROSS_PREFIX?=x86_64-w64-mingw32-
   EXE=.exe
 else
   CROSS_PREFIX?=
@@ -206,9 +200,6 @@ QJSC=./qjsc$(EXE)
 endif
 ifndef CONFIG_WIN32
 PROGS+=qjscalc
-endif
-ifdef CONFIG_M32
-PROGS+=qjs32 qjs32_s
 endif
 PROGS+=libquickjs.a
 ifdef CONFIG_LTO
@@ -410,13 +401,8 @@ HELLO_OPTS=-fno-string-normalize -fno-map -fno-promise -fno-typedarray \
 hello.c: $(QJSC) $(HELLO_SRCS)
 	$(QJSC) -e $(HELLO_OPTS) -o $@ $(HELLO_SRCS)
 
-ifdef CONFIG_M32
-examples/hello: $(OBJDIR)/hello.m32s.o $(patsubst %.o, %.m32s.o, $(QJS_LIB_OBJS))
-	$(CC) -m32 $(LDFLAGS) -o $@ $^ $(LIBS)
-else
 examples/hello: $(OBJDIR)/hello.o $(QJS_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
-endif
 
 # example of static JS compilation with modules
 HELLO_MODULE_SRCS=examples/hello_module.js
@@ -475,9 +461,6 @@ doc/%.epub: doc/%.texi
 ifdef CONFIG_SHARED_LIBS
 test: tests/bjson.so examples/point.so
 endif
-ifdef CONFIG_M32
-test: qjs32
-endif
 
 test: ptkl
 	./ptkl tests/test_closure.js
@@ -500,48 +483,27 @@ ifdef CONFIG_BIGNUM
 	./ptkl --bignum tests/test_bigfloat.js
 #	./ptkl --qjscalc tests/test_qjscalc.js
 endif
-ifdef CONFIG_M32
-	./qjs32 tests/test_closure.js
-	./qjs32 tests/test_language.js
-	./qjs32 --std tests/test_builtin.js
-	./qjs32 tests/test_loop.js
-	./qjs32 tests/test_bignum.js
-	./qjs32 tests/test_std.js
-	./qjs32 tests/test_worker.js
-ifdef CONFIG_BIGNUM
-	./qjs32 --bignum tests/test_op_overloading.js
-	./qjs32 --bignum tests/test_bigfloat.js
-#	./qjs32 --qjscalc tests/test_qjscalc.js
-endif
-endif
 
-stats: ptkl qjs32
+stats: ptkl
 	./ptkl -qd
-	./qjs32 -qd
 
 microbench: ptkl
 	./ptkl --std tests/microbench.js
 
-microbench-32: qjs32
-	./qjs32 --std tests/microbench.js
-
 ifeq ($(wildcard test262o/tests.txt),)
-test2o test2o-32 test2o-update:
+test2o test2o-update:
 	@echo test262o tests not installed
 else
 # ES5 tests (obsolete)
 test2o: run-test262
 	time ./run-test262 -t -m -c test262o.conf
 
-test2o-32: run-test262-32
-	time ./run-test262-32 -t -m -c test262o.conf
-
 test2o-update: run-test262
 	./run-test262 -t -u -c test262o.conf
 endif
 
 ifeq ($(wildcard test262/features.txt),)
-test2 test2-32 test2-update test2-default test2-check:
+test2 test2-update test2-default test2-check:
 	@echo test262 tests not installed
 else
 # Test262 tests
@@ -550,9 +512,6 @@ test2-default: run-test262
 
 test2: run-test262
 	time ./run-test262 -t -m -c test262.conf -a
-
-test2-32: run-test262-32
-	time ./run-test262-32 -t -m -c test262.conf -a
 
 test2-update: run-test262
 	./run-test262 -t -u -c test262.conf -a
@@ -563,9 +522,7 @@ endif
 
 testall: all test microbench test2o test2
 
-testall-32: all test-32 microbench-32 test2o-32 test2-32
-
-testall-complete: testall testall-32
+testall-complete: testall
 
 node-test:
 	node tests/test_closure.js
