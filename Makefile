@@ -29,14 +29,10 @@ endif
 ifeq ($(shell uname -s),FreeBSD)
 CONFIG_FREEBSD=y
 endif
-# Windows cross compilation from Linux
-#CONFIG_WIN32=y
 # use link time optimization (smaller and faster executables but slower build)
 #CONFIG_LTO=y
 # consider warnings as errors (for development)
 #CONFIG_WERROR=y
-# cosmopolitan build (see https://github.com/jart/cosmopolitan)
-#CONFIG_COSMO=y
 
 # installation directory
 PREFIX?=/usr/local
@@ -77,13 +73,8 @@ CONFIG_DEFAULT_AR=y
 CONFIG_LTO=
 endif
 
-ifdef CONFIG_WIN32
-  CROSS_PREFIX?=x86_64-w64-mingw32-
-  EXE=.exe
-else
-  CROSS_PREFIX?=
-  EXE=
-endif
+CROSS_PREFIX?=
+EXE=
 
 CFLAGS += -std=c23
 ifdef CONFIG_CLANG
@@ -109,14 +100,6 @@ ifdef CONFIG_CLANG
     endif
   endif
   LIB_FUZZING_ENGINE ?= "-fsanitize=fuzzer"
-else ifdef CONFIG_COSMO
-  CONFIG_LTO=
-  HOST_CC=gcc
-  CC=cosmocc
-  # cosmocc does not correct support -MF
-  CFLAGS=-g -Wall #-MMD -MF $(OBJDIR)/$(@F).d
-  CFLAGS += -Wno-array-bounds -Wno-format-truncation
-  AR=cosmoar
 else
   HOST_CC=gcc
   CC=$(CROSS_PREFIX)gcc
@@ -137,13 +120,8 @@ DEFINES:=-D_GNU_SOURCE -DCONFIG_VERSION=\"$(shell cat VERSION)\"
 ifdef CONFIG_BIGNUM
 DEFINES+=-DCONFIG_BIGNUM
 endif
-ifdef CONFIG_WIN32
-DEFINES+=-D__USE_MINGW_ANSI_STDIO # for standard snprintf behavior
-endif
-ifndef CONFIG_WIN32
 ifeq ($(shell $(CC) -o /dev/null compat/test-closefrom.c 2>/dev/null && echo 1),1)
 DEFINES+=-DHAVE_CLOSEFROM
-endif
 endif
 
 CFLAGS+=$(DEFINES)
@@ -151,11 +129,7 @@ CFLAGS_DEBUG=$(CFLAGS) -O0
 CFLAGS_SMALL=$(CFLAGS) -Os
 CFLAGS_OPT=$(CFLAGS) -O2
 CFLAGS_NOLTO:=$(CFLAGS_OPT)
-ifdef CONFIG_COSMO
-LDFLAGS+=-s # better to strip by default
-else
 LDFLAGS+=-g
-endif
 ifdef CONFIG_LTO
 CFLAGS_SMALL+=-flto
 CFLAGS_OPT+=-flto
@@ -177,16 +151,10 @@ ifdef CONFIG_UBSAN
 CFLAGS+=-fsanitize=undefined -fno-omit-frame-pointer
 LDFLAGS+=-fsanitize=undefined -fno-omit-frame-pointer
 endif
-ifdef CONFIG_WIN32
-LDEXPORT=
-else
 LDEXPORT=-rdynamic
-endif
 
-ifndef CONFIG_COSMO
 ifndef CONFIG_DARWIN
 CONFIG_SHARED_LIBS=y # building shared libraries is supported
-endif
 endif
 
 PROGS=ptkl$(EXE) qjsc$(EXE) run-test262
@@ -198,9 +166,7 @@ else
 QJSC_CC=$(CC)
 QJSC=./qjsc$(EXE)
 endif
-ifndef CONFIG_WIN32
 PROGS+=qjscalc
-endif
 PROGS+=libquickjs.a
 ifdef CONFIG_LTO
 PROGS+=libquickjs.lto.a
@@ -231,9 +197,7 @@ endif
 
 HOST_LIBS=-lm -ldl -lpthread
 LIBS=-lm
-ifndef CONFIG_WIN32
 LIBS+=-ldl -lpthread
-endif
 LIBS+=$(EXTRA_LIBS)
 
 $(OBJDIR):
