@@ -73,13 +73,9 @@ CONFIG_DEFAULT_AR=y
 CONFIG_LTO=
 endif
 
-CROSS_PREFIX?=
-EXE=
-
 CFLAGS += -std=c23
 ifdef CONFIG_CLANG
-  HOST_CC=clang
-  CC=$(CROSS_PREFIX)clang
+  CC=clang
   CFLAGS+=-g -Wall -MMD -MF $(OBJDIR)/$(@F).d
   CFLAGS += -Wextra
   CFLAGS += -Wno-sign-compare
@@ -91,27 +87,26 @@ ifdef CONFIG_CLANG
   CFLAGS += -MMD -MF $(OBJDIR)/$(@F).d
   CFLAGS += -Wno-unknown-warning-option
   ifdef CONFIG_DEFAULT_AR
-    AR=$(CROSS_PREFIX)ar
+    AR=ar
   else
     ifdef CONFIG_LTO
-      AR=$(CROSS_PREFIX)llvm-ar
+      AR=llvm-ar
     else
-      AR=$(CROSS_PREFIX)ar
+      AR=ar
     endif
   endif
   LIB_FUZZING_ENGINE ?= "-fsanitize=fuzzer"
 else
-  HOST_CC=gcc
-  CC=$(CROSS_PREFIX)gcc
+  CC=gcc
   CFLAGS+=-g -Wall -MMD -MF $(OBJDIR)/$(@F).d
   CFLAGS += -Wno-array-bounds -Wno-format-truncation
   ifdef CONFIG_LTO
-    AR=$(CROSS_PREFIX)gcc-ar
+    AR=gcc-ar
   else
-    AR=$(CROSS_PREFIX)ar
+    AR=ar
   endif
 endif
-STRIP?=$(CROSS_PREFIX)strip
+STRIP?=strip
 CFLAGS+=-fwrapv # ensure that signed overflows behave as expected
 ifdef CONFIG_WERROR
 CFLAGS+=-Werror
@@ -157,16 +152,15 @@ ifndef CONFIG_DARWIN
 CONFIG_SHARED_LIBS=y # building shared libraries is supported
 endif
 
-PROGS=ptkl$(EXE) qjsc$(EXE) run-test262
+PROGS=ptkl qjsc run-test262
 ifneq ($(CROSS_PREFIX),)
 QJSC_CC=gcc
 QJSC=./host-qjsc
 PROGS+=$(QJSC)
 else
 QJSC_CC=$(CC)
-QJSC=./qjsc$(EXE)
+QJSC=./qjsc
 endif
-PROGS+=qjscalc
 PROGS+=libquickjs.a
 ifdef CONFIG_LTO
 PROGS+=libquickjs.lto.a
@@ -191,25 +185,20 @@ all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/ptkl.check.o $(PROGS)
 QJS_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
 
 QJS_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/repl.o $(QJS_LIB_OBJS)
-ifdef CONFIG_BIGNUM
-QJS_OBJS+=$(OBJDIR)/qjscalc.o
-endif
 
-HOST_LIBS=-lm -ldl -lpthread
-LIBS=-lm
-LIBS+=-ldl -lpthread
+LIBS=-lm -ldl -lpthread
 LIBS+=$(EXTRA_LIBS)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR) $(OBJDIR)/examples $(OBJDIR)/tests
 
-ptkl$(EXE): $(QJS_OBJS)
+ptkl: $(QJS_OBJS)
 	$(CC) $(LDFLAGS) $(LDEXPORT) -o $@ $^ $(LIBS)
 
-ptkl-debug$(EXE): $(patsubst %.o, %.debug.o, $(QJS_OBJS))
+ptkl-debug: $(patsubst %.o, %.debug.o, $(QJS_OBJS))
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-qjsc$(EXE): $(OBJDIR)/qjsc.o $(QJS_LIB_OBJS)
+qjsc: $(OBJDIR)/qjsc.o $(QJS_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 fuzz_eval: $(OBJDIR)/fuzz_eval.o $(OBJDIR)/fuzz_common.o libquickjs.fuzz.a
@@ -227,7 +216,7 @@ ifneq ($(CROSS_PREFIX),)
 
 $(QJSC): $(OBJDIR)/qjsc.host.o \
     $(patsubst %.o, %.host.o, $(QJS_LIB_OBJS))
-	$(HOST_CC) $(LDFLAGS) -o $@ $^ $(HOST_LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 endif #CROSS_PREFIX
 
@@ -235,20 +224,10 @@ QJSC_DEFINES:=-DCONFIG_CC=\"$(QJSC_CC)\" -DCONFIG_PREFIX=\"$(PREFIX)\"
 ifdef CONFIG_LTO
 QJSC_DEFINES+=-DCONFIG_LTO
 endif
-QJSC_HOST_DEFINES:=-DCONFIG_CC=\"$(HOST_CC)\" -DCONFIG_PREFIX=\"$(PREFIX)\"
+QJSC_DEFINES:=-DCONFIG_CC=\"$(CC)\" -DCONFIG_PREFIX=\"$(PREFIX)\"
 
 $(OBJDIR)/qjsc.o: CFLAGS+=$(QJSC_DEFINES)
-$(OBJDIR)/qjsc.host.o: CFLAGS+=$(QJSC_HOST_DEFINES)
-
-qjs32: $(patsubst %.o, %.m32.o, $(QJS_OBJS))
-	$(CC) -m32 $(LDFLAGS) $(LDEXPORT) -o $@ $^ $(LIBS)
-
-qjs32_s: $(patsubst %.o, %.m32s.o, $(QJS_OBJS))
-	$(CC) -m32 $(LDFLAGS) -o $@ $^ $(LIBS)
-	@size $@
-
-qjscalc: ptkl
-	ln -sf $< $@
+$(OBJDIR)/qjsc.host.o: CFLAGS+=$(QJSC_DEFINES)
 
 ifdef CONFIG_LTO
 LTOEXT=.lto
@@ -270,13 +249,10 @@ libquickjs.fuzz.a: $(patsubst %.o, %.fuzz.o, $(QJS_LIB_OBJS))
 repl.c: $(QJSC) repl.js
 	$(QJSC) -c -o $@ -m repl.js
 
-qjscalc.c: $(QJSC) qjscalc.js
-	$(QJSC) -fbignum -c -o $@ qjscalc.js
-
 # unicode
 ifneq ($(wildcard unicode/UnicodeData.txt),)
 
-UNICODE_OBJS = libunicode.o libunicode.m32.o libunicode.m32s.o libunicode.nolto.o
+UNICODE_OBJS = libunicode.o libunicode.nolto.o
 
 $(OBJDIR)/$(UNICODE_OBJS): libunicode-table.h
 
@@ -290,11 +266,6 @@ run-test262: $(OBJDIR)/run-test262.o $(QJS_LIB_OBJS)
 run-test262-debug: $(patsubst %.o, %.debug.o, $(OBJDIR)/run-test262.o $(QJS_LIB_OBJS))
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-run-test262-32: $(patsubst %.o, %.m32.o, $(OBJDIR)/run-test262.o $(QJS_LIB_OBJS))
-	$(CC) -m32 $(LDFLAGS) -o $@ $^ $(LIBS)
-
-# object suffix order: nolto, [m32|m32s]
-
 $(OBJDIR)/%.o: %.c | $(OBJDIR)
 	$(CC) $(CFLAGS_OPT) -c -o $@ $<
 
@@ -302,19 +273,13 @@ $(OBJDIR)/fuzz_%.o: fuzz/fuzz_%.c | $(OBJDIR)
 	$(CC) $(CFLAGS_OPT) -c -I. -o $@ $<
 
 $(OBJDIR)/%.host.o: %.c | $(OBJDIR)
-	$(HOST_CC) $(CFLAGS_OPT) -c -o $@ $<
+	$(CC) $(CFLAGS_OPT) -c -o $@ $<
 
 $(OBJDIR)/%.pic.o: %.c | $(OBJDIR)
 	$(CC) $(CFLAGS_OPT) -fPIC -DJS_SHARED_LIBRARY -c -o $@ $<
 
 $(OBJDIR)/%.nolto.o: %.c | $(OBJDIR)
 	$(CC) $(CFLAGS_NOLTO) -c -o $@ $<
-
-$(OBJDIR)/%.m32.o: %.c | $(OBJDIR)
-	$(CC) -m32 $(CFLAGS_OPT) -c -o $@ $<
-
-$(OBJDIR)/%.m32s.o: %.c | $(OBJDIR)
-	$(CC) -m32 $(CFLAGS_SMALL) -c -o $@ $<
 
 $(OBJDIR)/%.debug.o: %.c | $(OBJDIR)
 	$(CC) $(CFLAGS_DEBUG) -c -o $@ $<
@@ -329,22 +294,21 @@ regexp_test: libregexp.c libunicode.c cutils.c
 	$(CC) $(LDFLAGS) $(CFLAGS) -DTEST -o $@ libregexp.c libunicode.c cutils.c $(LIBS)
 
 unicode_gen: $(OBJDIR)/unicode_gen.host.o $(OBJDIR)/cutils.host.o libunicode.c unicode_gen_def.h
-	$(HOST_CC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/unicode_gen.host.o $(OBJDIR)/cutils.host.o
+	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/unicode_gen.host.o $(OBJDIR)/cutils.host.o
 
 clean:
-	rm -f repl.c qjscalc.c out.c
+	rm -f repl.c out.c
 	rm -f *.a *.o *.d *~ unicode_gen regexp_test fuzz_eval fuzz_compile fuzz_regexp $(PROGS)
 	rm -f hello.c test_fib.c
 	rm -f examples/*.so tests/*.so
 	rm -rf $(OBJDIR)/ *.dSYM/ qjs-debug
-	rm -rf run-test262-debug run-test262-32
+	rm -rf run-test262-debug
 	rm -f run_octane run_sunspider_like
 
 install: all
 	mkdir -p "$(DESTDIR)$(PREFIX)/bin"
-	$(STRIP) ptkl$(EXE) qjsc$(EXE)
-	install -m755 ptkl$(EXE) qjsc$(EXE) "$(DESTDIR)$(PREFIX)/bin"
-	ln -sf ptkl$(EXE) "$(DESTDIR)$(PREFIX)/bin/qjscalc$(EXE)"
+	$(STRIP) ptkl qjsc
+	install -m755 ptkl qjsc$ "$(DESTDIR)$(PREFIX)/bin"
 	mkdir -p "$(DESTDIR)$(PREFIX)/lib/quickjs"
 	install -m644 libquickjs.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
 ifdef CONFIG_LTO
@@ -441,11 +405,6 @@ else
 	./ptkl tests/test_bjson.js
 endif
 	./ptkl examples/test_point.js
-endif
-ifdef CONFIG_BIGNUM
-	./ptkl --bignum tests/test_op_overloading.js
-	./ptkl --bignum tests/test_bigfloat.js
-#	./ptkl --qjscalc tests/test_qjscalc.js
 endif
 
 stats: ptkl
