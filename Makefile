@@ -111,7 +111,7 @@ CFLAGS+=-fwrapv # ensure that signed overflows behave as expected
 ifdef CONFIG_WERROR
 CFLAGS+=-Werror
 endif
-DEFINES:=-D_GNU_SOURCE -DCONFIG_VERSION=\"$(shell cat VERSION)\"
+DEFINES:=-D_GNU_SOURCE
 ifdef CONFIG_BIGNUM
 DEFINES+=-DCONFIG_BIGNUM
 endif
@@ -146,7 +146,14 @@ ifdef CONFIG_UBSAN
 CFLAGS+=-fsanitize=undefined -fno-omit-frame-pointer
 LDFLAGS+=-fsanitize=undefined -fno-omit-frame-pointer
 endif
+
+ifdef DEBUG
+DEFINES+=-DCONFIG_VERSION=\"$(shell cat VERSION).debug\"
+LDEXPORT=
+else
+DEFINES+=-DCONFIG_VERSION=\"$(shell cat VERSION)\"
 LDEXPORT=-rdynamic
+endif
 
 ifndef CONFIG_DARWIN
 CONFIG_SHARED_LIBS=y # building shared libraries is supported
@@ -189,14 +196,21 @@ QJS_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/repl.o $(QJS_LIB_OBJS)
 LIBS=-lm -ldl -lpthread
 LIBS+=$(EXTRA_LIBS)
 
+.PHONY: bump-version
+bump-version:
+	date -I > VERSION
+
 $(OBJDIR):
 	mkdir -p $(OBJDIR) $(OBJDIR)/examples $(OBJDIR)/tests
 
 ptkl: $(QJS_OBJS)
 	$(CC) $(LDFLAGS) $(LDEXPORT) -o $@ $^ $(LIBS)
 
-ptkl-debug: $(patsubst %.o, %.debug.o, $(QJS_OBJS))
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+ptkl-new-release: clean bump-version
+	make ptkl
+
+ptkl-new-debug: clean bump-version
+	DEBUG=1 make ptkl
 
 qjsc: $(OBJDIR)/qjsc.o $(QJS_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)

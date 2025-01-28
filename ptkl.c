@@ -281,7 +281,7 @@ void help(const int exit_code) {
 }
 
 void version() {
-    printf("ptkl%s\n", CONFIG_VERSION);
+    printf("ptkl %s\n", CONFIG_VERSION);
     exit(0);
 }
 
