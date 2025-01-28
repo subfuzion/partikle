@@ -468,6 +468,9 @@ node-test:
 	node tests/test_loop.js
 	node tests/test_bignum.js
 
+###############################################################################
+# benchmarks
+
 node-microbench:
 	node tests/microbench.js -s microbench-node.txt
 	node --jitless tests/microbench.js -s microbench-node-jitless.txt
