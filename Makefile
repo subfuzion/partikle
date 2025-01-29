@@ -73,7 +73,7 @@ CONFIG_DEFAULT_AR=y
 CONFIG_LTO=
 endif
 
-CFLAGS += -std=c23
+CFLAGS += -std=c2x
 ifdef CONFIG_CLANG
   CC=clang
   CFLAGS+=-g -Wall -MMD -MF $(OBJDIR)/$(@F).d
@@ -240,7 +240,7 @@ libquickjs.fuzz.a: $(patsubst %.o, %.fuzz.o, $(QJS_LIB_OBJS))
 	$(AR) rcs $@ $^
 
 repl.c: ptklc repl.js
-	ptklc -c -o $@ -m repl.js
+	./ptklc -c -o $@ -m repl.js
 
 # unicode
 ifneq ($(wildcard unicode/UnicodeData.txt),)
@@ -318,7 +318,7 @@ HELLO_OPTS=-fno-string-normalize -fno-map -fno-promise -fno-typedarray \
            -fno-date -fno-module-loader -fno-bigint
 
 hello.c: ptklc $(HELLO_SRCS)
-	ptklc -e $(HELLO_OPTS) -o $@ $(HELLO_SRCS)
+	./ptklc -e $(HELLO_OPTS) -o $@ $(HELLO_SRCS)
 
 examples/hello: $(OBJDIR)/hello.o $(QJS_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
@@ -330,12 +330,12 @@ HELLO_MODULE_OPTS=-fno-string-normalize -fno-map -fno-typedarray \
            -fno-date -m
 
 examples/hello_module: ptklc libquickjs$(LTOEXT).a $(HELLO_MODULE_SRCS)
-	ptklc $(HELLO_MODULE_OPTS) -o $@ $(HELLO_MODULE_SRCS)
+	./ptklc $(HELLO_MODULE_OPTS) -o $@ $(HELLO_MODULE_SRCS)
 
 # use of an external C module (static compilation)
 
 test_fib.c: ptklc examples/test_fib.js
-	ptklc -e -M examples/fib.so,fib -m -o $@ examples/test_fib.js
+	./ptklc -e -M examples/fib.so,fib -m -o $@ examples/test_fib.js
 
 examples/test_fib: $(OBJDIR)/test_fib.o $(OBJDIR)/examples/fib.o libquickjs$(LTOEXT).a
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)

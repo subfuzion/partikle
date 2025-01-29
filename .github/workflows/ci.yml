@@ -9,7 +9,7 @@ on:
       - '!TODO'
       - '!doc/**'
       - '!examples/**'
-      - '.github/workflows/ci.yml'
+
   push:
     branches:
       - '*'
@@ -29,7 +29,7 @@ jobs:
           make -j$(getconf _NPROCESSORS_ONLN) CONFIG_WERROR=y
       - name: Stats
         run: |
-          ./qjs -qd
+          ./ptkl -qd
       - name: Run built-in tests
         run: |
           make test
@@ -96,7 +96,7 @@ jobs:
           make -j$(getconf _NPROCESSORS_ONLN) CONFIG_WERROR=y
       - name: Stats
         run: |
-          ./qjs -qd
+          ./ptkl -qd
       - name: Run built-in tests
         run: |
           make test
@@ -139,7 +139,7 @@ jobs:
             pkg install -y gmake
           run: |
             gmake
-            ./qjs -qd
+            ./ptkl -qd
             gmake test
 
   qemu-alpine:
