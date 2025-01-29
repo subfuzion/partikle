@@ -199,6 +199,9 @@ $(OBJDIR):
 ptkl: $(QJS_OBJS)
 	$(CC) $(LDFLAGS) $(LDEXPORT) -o $@ $^ $(LIBS)
 
+ptkl-debug: $(patsubst %.o, %.debug.o, $(QJS_OBJS))
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+
 ptklc: $(OBJDIR)/ptklc_main.o $(OBJDIR)/ptklc.o $(QJS_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
@@ -285,6 +288,7 @@ unicode_gen: $(OBJDIR)/unicode_gen.o $(OBJDIR)/cutils.o libunicode.c unicode_gen
 
 clean:
 	rm -rf $(PROGS) $(OBJDIR)/ *.dSYM/
+	rm -f ptkl-debug
 	rm -f examples/*.so tests/*.so
 	rm -f examples/test_fib examples/hello examples/hello_module
 	rm -f repl.c out.c hello.c test_fib.c
