@@ -45,6 +45,8 @@
 extern const uint8_t qjsc_repl[];
 extern const uint32_t qjsc_repl_size;
 
+extern int compile(int argc, char **argv);
+
 // Automatically compiled with ecmascript standard bigint support, so this
 // just disables non-standard bigdecimal, bigfloat, and related extensions
 static int bignum_ext = 0;
@@ -285,7 +287,9 @@ void version() {
     exit(0);
 }
 
-struct parse_opts {
+struct common_opts {};
+
+struct runtime_opts {
     char *expr;
     int interactive;
     int dump_memory;
@@ -301,8 +305,12 @@ struct parse_opts {
     int bignum_ext;
 };
 
-// Can't use getopt because we want to pass the command line to the script
-int parse_args(const int argc, char **argv, struct parse_opts *opts) {
+struct compiler_opts {};
+
+
+
+// Don't use getopt so we can pass command line to scripts
+int parse_runtime_args(const int argc, char **argv, struct runtime_opts *opts) {
     opts->expr = NULL;
     opts->interactive = 0;
     opts->dump_memory = 0;
@@ -426,12 +434,19 @@ int parse_args(const int argc, char **argv, struct parse_opts *opts) {
     return optind;
 }
 
-int main(const int argc, char **argv) {
+int main(int argc, char **argv) {
+    if (argc > 1 && !strcmp(argv[1], "compile")) {
+        for (int i = 1; i < argc; i++) {
+            argv[i] = argv[i + 1];
+        }
+        return compile(--argc, argv);
+    }
+
     JSRuntime *rt;
     struct trace_malloc_data trace_data = {NULL};
 
-    struct parse_opts opts;
-    int optind = parse_args(argc, argv, &opts);
+    struct runtime_opts opts;
+    const int optind = parse_runtime_args(argc, argv, &opts);
 
     // Initialize the runtime
     if (opts.trace_memory) {
