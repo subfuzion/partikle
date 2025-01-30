@@ -399,12 +399,6 @@ endif
 	./ptkl examples/test_point.js
 endif
 
-stats: ptkl
-	./ptkl -qd
-
-microbench: ptkl
-	./ptkl --std tests/microbench.js
-
 ifeq ($(wildcard test262o/tests.txt),)
 test2o test2o-update:
 	@echo test262o tests not installed
@@ -448,6 +442,12 @@ node-test:
 
 ###############################################################################
 # benchmarks
+
+stats: ptkl
+	./ptkl -qd
+
+microbench: ptkl
+	./ptkl --std tests/microbench.js
 
 node-microbench:
 	node tests/microbench.js -s microbench-node.txt
