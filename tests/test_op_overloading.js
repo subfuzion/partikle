@@ -8,79 +8,80 @@ function assert(actual, expected, message) {
         return;
 
     if (actual !== null && expected !== null
-    &&  typeof actual == 'object' && typeof expected == 'object'
-    &&  actual.toString() === expected.toString())
+        && typeof actual == 'object' && typeof expected == 'object'
+        && actual.toString() === expected.toString())
         return;
 
     throw Error("assertion failed: got |" + actual + "|" +
-                ", expected |" + expected + "|" +
-                (message ? " (" + message + ")" : ""));
+        ", expected |" + expected + "|" +
+        (message ? " (" + message + ")" : ""));
 }
 
 /* operators overloading with Operators.create() */
 function test_operators_create() {
-    class Vec2
-    {
+    class Vec2 {
         constructor(x, y) {
             this.x = x;
             this.y = y;
         }
+
         static mul_scalar(p1, a) {
             var r = new Vec2();
             r.x = p1.x * a;
             r.y = p1.y * a;
             return r;
         }
+
         toString() {
             return "Vec2(" + this.x + "," + this.y + ")";
         }
     }
 
     Vec2.prototype[Symbol.operatorSet] = Operators.create(
-    {
-        "+"(p1, p2) {
-            var r = new Vec2();
-            r.x = p1.x + p2.x;
-            r.y = p1.y + p2.y;
-            return r;
+        {
+            "+"(p1, p2) {
+                var r = new Vec2();
+                r.x = p1.x + p2.x;
+                r.y = p1.y + p2.y;
+                return r;
+            },
+            "-"(p1, p2) {
+                var r = new Vec2();
+                r.x = p1.x - p2.x;
+                r.y = p1.y - p2.y;
+                return r;
+            },
+            "=="(a, b) {
+                return a.x == b.x && a.y == b.y;
+            },
+            "<"(a, b) {
+                var r;
+                /* lexicographic order */
+                if (a.x == b.x)
+                    r = (a.y < b.y);
+                else
+                    r = (a.x < b.x);
+                return r;
+            },
+            "++"(a) {
+                var r = new Vec2();
+                r.x = a.x + 1;
+                r.y = a.y + 1;
+                return r;
+            }
         },
-        "-"(p1, p2) {
-            var r = new Vec2();
-            r.x = p1.x - p2.x;
-            r.y = p1.y - p2.y;
-            return r;
+        {
+            left: Number,
+            "*"(a, b) {
+                return Vec2.mul_scalar(b, a);
+            }
         },
-        "=="(a, b) {
-            return a.x == b.x && a.y == b.y;
-        },
-        "<"(a, b) {
-            var r;
-            /* lexicographic order */
-            if (a.x == b.x)
-                r = (a.y < b.y);
-            else
-                r = (a.x < b.x);
-            return r;
-        },
-        "++"(a) {
-            var r = new Vec2();
-            r.x = a.x + 1;
-            r.y = a.y + 1;
-            return r;
-        }
-    },
-    {
-        left: Number,
-        "*"(a, b) {
-            return Vec2.mul_scalar(b, a);
-        }
-    },
-    {
-        right: Number,
-        "*"(a, b) {
-            return Vec2.mul_scalar(a, b);
-        }
-    });
+        {
+            right: Number,
+            "*"(a, b) {
+                return Vec2.mul_scalar(a, b);
+            }
+        });
 
     var a = new Vec2(1, 2);
     var b = new Vec2(3, 4);
@@ -105,8 +106,7 @@ function test_operators_create() {
 }
 
 /* operators overloading thru inheritance */
-function test_operators()
-{
+function test_operators() {
     var Vec2;
 
     function mul_scalar(p1, a) {
@@ -117,57 +117,57 @@ function test_operators()
     }
 
     var vec2_ops = Operators({
-        "+"(p1, p2) {
-            var r = new Vec2();
-            r.x = p1.x + p2.x;
-            r.y = p1.y + p2.y;
-            return r;
+            "+"(p1, p2) {
+                var r = new Vec2();
+                r.x = p1.x + p2.x;
+                r.y = p1.y + p2.y;
+                return r;
+            },
+            "-"(p1, p2) {
+                var r = new Vec2();
+                r.x = p1.x - p2.x;
+                r.y = p1.y - p2.y;
+                return r;
+            },
+            "=="(a, b) {
+                return a.x == b.x && a.y == b.y;
+            },
+            "<"(a, b) {
+                var r;
+                /* lexicographic order */
+                if (a.x == b.x)
+                    r = (a.y < b.y);
+                else
+                    r = (a.x < b.x);
+                return r;
+            },
+            "++"(a) {
+                var r = new Vec2();
+                r.x = a.x + 1;
+                r.y = a.y + 1;
+                return r;
+            }
         },
-        "-"(p1, p2) {
-            var r = new Vec2();
-            r.x = p1.x - p2.x;
-            r.y = p1.y - p2.y;
-            return r;
+        {
+            left: Number,
+            "*"(a, b) {
+                return mul_scalar(b, a);
+            }
         },
-        "=="(a, b) {
-            return a.x == b.x && a.y == b.y;
-        },
-        "<"(a, b) {
-            var r;
-            /* lexicographic order */
-            if (a.x == b.x)
-                r = (a.y < b.y);
-            else
-                r = (a.x < b.x);
-            return r;
-        },
-        "++"(a) {
-            var r = new Vec2();
-            r.x = a.x + 1;
-            r.y = a.y + 1;
-            return r;
-        }
-    },
-    {
-        left: Number,
-        "*"(a, b) {
-            return mul_scalar(b, a);
-        }
-    },
-    {
-        right: Number,
-        "*"(a, b) {
-            return mul_scalar(a, b);
-        }
-    });
+        {
+            right: Number,
+            "*"(a, b) {
+                return mul_scalar(a, b);
+            }
+        });
 
-    Vec2 = class Vec2 extends vec2_ops
-    {
+    Vec2 = class Vec2 extends vec2_ops {
         constructor(x, y) {
             super();
             this.x = x;
             this.y = y;
         }
+
         toString() {
             return "Vec2(" + this.x + "," + this.y + ")";
         }
@@ -195,8 +195,7 @@ function test_operators()
     assert(r === a);
 }
 
-function test_default_op()
-{
+function test_default_op() {
     assert(Object(1) + 2, 3);
     assert(Object(1) + true, 2);
     assert(-Object(1), -1);

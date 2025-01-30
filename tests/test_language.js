@@ -6,21 +6,20 @@ function assert(actual, expected, message) {
         return;
 
     if (actual !== null && expected !== null
-    &&  typeof actual == 'object' && typeof expected == 'object'
-    &&  actual.toString() === expected.toString())
+        && typeof actual == 'object' && typeof expected == 'object'
+        && actual.toString() === expected.toString())
         return;
 
     throw Error("assertion failed: got |" + actual + "|" +
-                ", expected |" + expected + "|" +
-                (message ? " (" + message + ")" : ""));
+        ", expected |" + expected + "|" +
+        (message ? " (" + message + ")" : ""));
 }
 
-function assert_throws(expected_error, func)
-{
+function assert_throws(expected_error, func) {
     var err = false;
     try {
         func();
-    } catch(e) {
+    } catch (e) {
         err = true;
         if (!(e instanceof expected_error)) {
             throw Error("unexpected exception type");
@@ -32,12 +31,14 @@ function assert_throws(expected_error, func)
 }
 
 // load more elaborate version of assert if available
-try { __loadScript("test_assert.js"); } catch(e) {}
+try {
+    __loadScript("test_assert.js");
+} catch (e) {
+}
 
 /*----------------*/
 
-function test_op1()
-{
+function test_op1() {
     var r, a;
     r = 1 + 2;
     assert(r, 3, "1 + 2 === 3");
@@ -105,8 +106,7 @@ function test_op1()
     assert(2 ** 8, 256, "2 ** 8 === 256");
 }
 
-function test_cvt()
-{
+function test_cvt() {
     assert((NaN | 0) === 0);
     assert((Infinity | 0) === 0);
     assert(((-Infinity) | 0) === 0);
@@ -123,8 +123,7 @@ function test_cvt()
     assert((19686109595169230000).toString() === "19686109595169230000");
 }
 
-function test_eq()
-{
+function test_eq() {
     assert(null == undefined);
     assert(undefined == null);
     assert(true == 1);
@@ -138,8 +137,7 @@ function test_eq()
     assert({} != "abc");
 }
 
-function test_inc_dec()
-{
+function test_inc_dec() {
     var a, r;
 
     a = 1;
@@ -158,11 +156,11 @@ function test_inc_dec()
     r = --a;
     assert(r === 0 && a === 0, true, "--");
 
-    a = {x:true};
+    a = {x: true};
     a.x++;
     assert(a.x, 2, "++");
 
-    a = {x:true};
+    a = {x: true};
     a.x--;
     assert(a.x, 0, "--");
 
@@ -170,11 +168,11 @@ function test_inc_dec()
     a[0]++;
     assert(a[0], 2, "++");
 
-    a = {x:true};
+    a = {x: true};
     r = a.x++;
     assert(r === 1 && a.x === 2, true, "++");
 
-    a = {x:true};
+    a = {x: true};
     r = a.x--;
     assert(r === 1 && a.x === 0, true, "--");
 
@@ -187,13 +185,11 @@ function test_inc_dec()
     assert(r === 1 && a[0] === 0, true, "--");
 }
 
-function F(x)
-{
+function F(x) {
     this.x = x;
 }
 
-function test_op2()
-{
+function test_op2() {
     var a, b;
     a = new Object;
     a.x = 1;
@@ -201,7 +197,7 @@ function test_op2()
     b = new F(2);
     assert(b.x, 2, "new");
 
-    a = {x : 2};
+    a = {x: 2};
     assert(("x" in a), true, "in");
     assert(("y" in a), false, "in");
 
@@ -219,8 +215,7 @@ function test_op2()
     assert(a.async === 3);
 }
 
-function test_delete()
-{
+function test_delete() {
     var a, err;
 
     a = {x: 1, y: 1};
@@ -233,75 +228,88 @@ function test_delete()
     err = false;
     try {
         delete null.a;
-    } catch(e) {
+    } catch (e) {
         err = (e instanceof TypeError);
     }
     assert(err, true, "delete");
 
     err = false;
     try {
-        a = { f() { delete super.a; } };
+        a = {
+            f() {
+                delete super.a;
+            }
+        };
         a.f();
-    } catch(e) {
+    } catch (e) {
         err = (e instanceof ReferenceError);
     }
     assert(err, true, "delete");
 }
 
-function test_prototype()
-{
-    var f = function f() { };
+function test_prototype() {
+    var f = function f() {
+    };
     assert(f.prototype.constructor, f, "prototype");
 
-    var g = function g() { };
+    var g = function g() {
+    };
     /* QuickJS bug */
-    Object.defineProperty(g, "prototype", { writable: false });
+    Object.defineProperty(g, "prototype", {writable: false});
     assert(g.prototype.constructor, g, "prototype");
 }
 
-function test_arguments()
-{
+function test_arguments() {
     function f2() {
         assert(arguments.length, 2, "arguments");
         assert(arguments[0], 1, "arguments");
         assert(arguments[1], 3, "arguments");
     }
+
     f2(1, 3);
 }
 
-function test_class()
-{
+function test_class() {
     var o;
+
     class C {
         constructor() {
             this.x = 10;
         }
-        f() {
-            return 1;
-        }
-        static F() {
-            return -1;
-        }
+
         get y() {
             return 12;
         }
-    };
+
+        static F() {
+            return -1;
+        }
+
+        f() {
+            return 1;
+        }
+    }
+
     class D extends C {
         constructor() {
             super();
             this.z = 20;
         }
-        g() {
-            return 2;
-        }
+
         static G() {
             return -2;
         }
-        h() {
-            return super.f();
-        }
+
         static H() {
             return super["F"]();
+        }
+
+        g() {
+            return 2;
+        }
+
+        h() {
+            return super.f();
         }
     }
 
@@ -324,7 +332,11 @@ function test_class()
     assert(o.h() === 1);
 
     /* test class name scope */
-    var E1 = class E { static F() { return E; } };
+    var E1 = class E {
+        static F() {
+            return E;
+        }
+    };
     assert(E1 === E1.F());
 
     class S {
@@ -332,26 +344,30 @@ function test_class()
         static y = S.x;
         static z = this.x;
     }
+
     assert(S.x === 42);
     assert(S.y === 42);
     assert(S.z === 42);
 
     class P {
         get = () => "123";
-        static() { return 42; }
+
+        static() {
+            return 42;
+        }
     }
+
     assert(new P().get() === "123");
     assert(new P().static() === 42);
-};
+}
 
-function test_template()
-{
+function test_template() {
     var a, b;
     b = 123;
     a = `abc${b}d`;
     assert(a, "abc123d");
 
-    a = String.raw `abc${b}d`;
+    a = String.raw`abc${b}d`;
     assert(a, "abc123d");
 
     a = "aaa";
@@ -359,103 +375,133 @@ function test_template()
     assert(`aaa${a, b}ccc`, "aaabbbccc");
 }
 
-function test_template_skip()
-{
+function test_template_skip() {
     var a = "Bar";
-    var { b = `${a + `a${a}` }baz` } = {};
+    var {b = `${a + `a${a}`}baz`} = {};
     assert(b, "BaraBarbaz");
 }
 
-function test_object_literal()
-{
-    var x = 0, get = 1, set = 2; async = 3;
-    a = { get: 2, set: 3, async: 4, get a(){ return this.get} };
+function test_object_literal() {
+    var x = 0, get = 1, set = 2;
+    async = 3;
+    a = {
+        get: 2, set: 3, async: 4, get a() {
+            return this.get
+        }
+    };
     assert(JSON.stringify(a), '{"get":2,"set":3,"async":4,"a":2}');
     assert(a.a === 2);
 
-    a = { x, get, set, async };
+    a = {x, get, set, async};
     assert(JSON.stringify(a), '{"x":0,"get":1,"set":2,"async":3}');
 }
 
-function test_regexp_skip()
-{
+function test_regexp_skip() {
     var a, b;
     [a, b = /abc\(/] = [1];
     assert(a === 1);
 
-    [a, b =/abc\(/] = [2];
+    [a, b = /abc\(/] = [2];
     assert(a === 2);
 }
 
-function test_labels()
-{
-    do x: { break x; } while(0);
+function test_labels() {
+    do x: {
+        break x;
+    } while (0);
     if (1)
-        x: { break x; }
+        x: {
+            break x;
+        }
     else
-        x: { break x; }
-    with ({}) x: { break x; };
-    while (0) x: { break x; };
+        x: {
+            break x;
+        }
+    with ({}) x: {
+        break x;
+    }
+
+    while (0) x: {
+        break x;
+    }
+
 }
 
-function test_destructuring()
-{
-    function * g () { return 0; };
+function test_destructuring() {
+    function* g() {
+        return 0;
+    }
     var [x] = g();
     assert(x, void 0);
 }
 
-function test_spread()
-{
+function test_spread() {
     var x;
     x = [1, 2, ...[3, 4]];
     assert(x.toString(), "1,2,3,4");
 
-    x = [ ...[ , ] ];
+    x = [...[,]];
     assert(Object.getOwnPropertyNames(x).toString(), "0,length");
 }
 
-function test_function_length()
-{
-    assert( ((a, b = 1, c) => {}).length, 1);
-    assert( (([a,b]) => {}).length, 1);
-    assert( (({a,b}) => {}).length, 1);
-    assert( ((c, [a,b] = 1, d) => {}).length, 1);
+function test_function_length() {
+    assert(((a, b = 1, c) => {
+    }).length, 1);
+    assert((([a, b]) => {
+    }).length, 1);
+    assert((({a, b}) => {
+    }).length, 1);
+    assert(((c, [a, b] = 1, d) => {
+    }).length, 1);
 }
 
-function test_argument_scope()
-{
+function test_argument_scope() {
     var f;
     var c = "global";
 
-    (function() {
+    (function () {
         "use strict";
         // XXX: node only throws in strict mode
-        f = function(a = eval("var arguments")) {};
+        f = function (a = eval("var arguments")) {
+        };
         assert_throws(SyntaxError, f);
     })();
 
-    f = function(a = eval("1"), b = arguments[0]) { return b; };
+    f = function (a = eval("1"), b = arguments[0]) {
+        return b;
+    };
     assert(f(12), 12);
 
-    f = function(a, b = arguments[0]) { return b; };
+    f = function (a, b = arguments[0]) {
+        return b;
+    };
     assert(f(12), 12);
 
-    f = function(a, b = () => arguments) { return b; };
+    f = function (a, b = () => arguments) {
+        return b;
+    };
     assert(f(12)()[0], 12);
 
-    f = function(a = eval("1"), b = () => arguments) { return b; };
+    f = function (a = eval("1"), b = () => arguments) {
+        return b;
+    };
     assert(f(12)()[0], 12);
 
-    (function() {
+    (function () {
         "use strict";
-        f = function(a = this) { return a; };
+        f = function (a = this) {
+            return a;
+        };
         assert(f.call(123), 123);
 
-        f = function f(a = f) { return a; };
+        f = function f(a = f) {
+            return a;
+        };
         assert(f(), f);
 
-        f = function f(a = eval("f")) { return a; };
+        f = function f(a = eval("f")) {
+            return a;
+        };
         assert(f(), f);
     })();
 
@@ -496,8 +542,7 @@ function test_argument_scope()
     f();
 }
 
-function test_function_expr_name()
-{
+function test_function_expr_name() {
     var f;
 
     /* non strict mode test : assignment to the function name silently
@@ -548,30 +593,29 @@ function test_function_expr_name()
     assert_throws(TypeError, f);
 }
 
-function test_parse_semicolon()
-{
+function test_parse_semicolon() {
     /* 'yield' or 'await' may not be considered as a token if the
        previous ';' is missing */
-    function *f()
-    {
+    function* f() {
         function func() {
         }
+
         yield 1;
         var h = x => x + 1
         yield 2;
     }
-    async function g()
-    {
+
+    async function g() {
         function func() {
         }
+
         await 1;
         var h = x => x + 1
         await 2;
     }
 }
 
-function test_parse_arrow_function()
-{
+function test_parse_arrow_function() {
     assert(typeof eval("() => {}\n() => {}"), "function");
     assert(eval("() => {}\n+1"), 1);
     assert(typeof eval("x => {}\n() => {}"), "function");
@@ -580,23 +624,24 @@ function test_parse_arrow_function()
 }
 
 /* optional chaining tests not present in test262 */
-function test_optional_chaining()
-{
+function test_optional_chaining() {
     var a, z;
     z = null;
-    a = { b: { c: 2 } };
+    a = {b: {c: 2}};
     assert(delete z?.b.c, true);
     assert(delete a?.b.c, true);
     assert(JSON.stringify(a), '{"b":{}}', "optional chaining delete");
 
-    a = { b: { c: 2 } };
+    a = {b: {c: 2}};
     assert(delete z?.b["c"], true);
     assert(delete a?.b["c"], true);
     assert(JSON.stringify(a), '{"b":{}}');
 
     a = {
-        b() { return this._b; },
-        _b: { c: 42 }
+        b() {
+            return this._b;
+        },
+        _b: {c: 42}
     };
 
     assert((a?.b)().c, 42);

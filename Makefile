@@ -73,10 +73,11 @@ CONFIG_DEFAULT_AR=y
 CONFIG_LTO=
 endif
 
-CFLAGS += -std=c2x
 ifdef CONFIG_CLANG
   CC=clang
-  CFLAGS+=-g -Wall -MMD -MF $(OBJDIR)/$(@F).d
+  C23=-std=c2x
+  CFLAGS += $(C23)
+  CFLAGS += -g -Wall -MMD -MF $(OBJDIR)/$(@F).d
   CFLAGS += -Wextra
   CFLAGS += -Wno-sign-compare
   CFLAGS += -Wno-missing-field-initializers
@@ -98,7 +99,9 @@ ifdef CONFIG_CLANG
   LIB_FUZZING_ENGINE ?= "-fsanitize=fuzzer"
 else
   CC=gcc
-  CFLAGS+=-g -Wall -MMD -MF $(OBJDIR)/$(@F).d
+  C23=-std=c2x
+  CFLAGS += $(C23)
+  CFLAGS += -g -Wall -MMD -MF $(OBJDIR)/$(@F).d
   CFLAGS += -Wno-array-bounds -Wno-format-truncation
   ifdef CONFIG_LTO
     AR=gcc-ar

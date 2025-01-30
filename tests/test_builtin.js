@@ -12,7 +12,7 @@ function throw_error(msg) {
 
 function assert(actual, expected, message) {
     function get_full_type(o) {
-        var type = typeof(o);
+        var type = typeof (o);
         if (type === 'object') {
             if (o === null)
                 return 'null';
@@ -36,25 +36,24 @@ function assert(actual, expected, message) {
         }
         if (typeof actual === 'object') {
             if (actual !== null && expected !== null
-            &&  actual.constructor === expected.constructor
-            &&  actual.toString() === expected.toString())
+                && actual.constructor === expected.constructor
+                && actual.toString() === expected.toString())
                 return;
         }
     }
     // Should output the source file and line number and extract
     //   the expression from the assert call
     throw_error("assertion failed: got " +
-                get_full_type(actual) + ":|" + actual + "|, expected " +
-                get_full_type(expected) + ":|" + expected + "|" +
-                (message ? " (" + message + ")" : ""));
+        get_full_type(actual) + ":|" + actual + "|, expected " +
+        get_full_type(expected) + ":|" + expected + "|" +
+        (message ? " (" + message + ")" : ""));
 }
 
-function assert_throws(expected_error, func)
-{
+function assert_throws(expected_error, func) {
     var err = false;
     try {
         func();
-    } catch(e) {
+    } catch (e) {
         err = true;
         if (!(e instanceof expected_error)) {
             // Should output the source file and line number and extract
@@ -71,24 +70,26 @@ function assert_throws(expected_error, func)
 }
 
 // load more elaborate version of assert if available
-try { __loadScript("test_assert.js"); } catch(e) {}
+try {
+    __loadScript("test_assert.js");
+} catch (e) {
+}
 
 /*----------------*/
 
-function my_func(a, b)
-{
+function my_func(a, b) {
     return a + b;
 }
 
-function test_function()
-{
+function test_function() {
     function f(a, b) {
         var i, tab = [];
         tab.push(this);
-        for(i = 0; i < arguments.length; i++)
+        for (i = 0; i < arguments.length; i++)
             tab.push(arguments[i]);
         return tab;
     }
+
     function constructor1(a) {
         this.x = a;
     }
@@ -101,28 +102,31 @@ function test_function()
     r = my_func.apply(null, [1, 2]);
     assert(r, 3, "apply");
 
-    r = (function () { return 1; }).apply(null, undefined);
+    r = (function () {
+        return 1;
+    }).apply(null, undefined);
     assert(r, 1);
 
-    assert_throws(TypeError, (function() {
-        Reflect.apply((function () { return 1; }), null, undefined);
+    assert_throws(TypeError, (function () {
+        Reflect.apply((function () {
+            return 1;
+        }), null, undefined);
     }));
 
     r = new Function("a", "b", "return a + b;");
-    assert(r(2,3), 5, "function");
+    assert(r(2, 3), 5, "function");
 
     g = f.bind(1, 2);
     assert(g.length, 1);
     assert(g.name, "bound f");
-    assert(g(3), [1,2,3]);
+    assert(g(3), [1, 2, 3]);
 
     g = constructor1.bind(null, 1);
     r = new g();
     assert(r.x, 1);
 }
 
-function test()
-{
+function test() {
     var r, a, b, c, err;
 
     r = Error("hello");
@@ -133,22 +137,39 @@ function test()
     assert(a.x, 1, "Object");
 
     assert(Object.getPrototypeOf(a), Object.prototype, "getPrototypeOf");
-    Object.defineProperty(a, "y", { value: 3, writable: true, configurable: true, enumerable: true });
+    Object.defineProperty(a, "y", {
+        value: 3,
+        writable: true,
+        configurable: true,
+        enumerable: true
+    });
     assert(a.y, 3, "defineProperty");
 
-    Object.defineProperty(a, "z", { get: function () { return 4; }, set: function(val) { this.z_val = val; }, configurable: true, enumerable: true });
+    Object.defineProperty(a, "z", {
+        get: function () {
+            return 4;
+        }, set: function (val) {
+            this.z_val = val;
+        }, configurable: true, enumerable: true
+    });
     assert(a.z, 4, "get");
     a.z = 5;
     assert(a.z_val, 5, "set");
 
-    a = { get z() { return 4; }, set z(val) { this.z_val = val; } };
+    a = {
+        get z() {
+            return 4;
+        }, set z(val) {
+            this.z_val = val;
+        }
+    };
     assert(a.z, 4, "get");
     a.z = 5;
     assert(a.z_val, 5, "set");
 
     b = Object.create(a);
     assert(Object.getPrototypeOf(b), a, "create");
-    c = {u:2};
+    c = {u: 2};
     /* XXX: refcount bug in 'b' instead of 'a' */
     Object.setPrototypeOf(a, c);
     assert(Object.getPrototypeOf(a), c, "setPrototypeOf");
@@ -156,14 +177,14 @@ function test()
     a = {};
     assert(a.toString(), "[object Object]", "toString");
 
-    a = {x:1};
+    a = {x: 1};
     assert(Object.isExtensible(a), true, "extensible");
     Object.preventExtensions(a);
 
     err = false;
     try {
         a.y = 2;
-    } catch(e) {
+    } catch (e) {
         err = true;
     }
     assert(Object.isExtensible(a), false, "extensible");
@@ -171,25 +192,25 @@ function test()
     assert(err, true, "extensible");
 }
 
-function test_enum()
-{
+function test_enum() {
     var a, tab;
-    a = {x:1,
-         "18014398509481984": 1,
-         "9007199254740992": 1,
-         "9007199254740991": 1,
-         "4294967296": 1,
-         "4294967295": 1,
-         y:1,
-         "4294967294": 1,
-         "1": 2};
+    a = {
+        x: 1,
+        "18014398509481984": 1,
+        "9007199254740992": 1,
+        "9007199254740991": 1,
+        "4294967296": 1,
+        "4294967295": 1,
+        y: 1,
+        "4294967294": 1,
+        "1": 2
+    };
     tab = Object.keys(a);
 //    console.log("tab=" + tab.toString());
-    assert(tab, ["1","4294967294","x","18014398509481984","9007199254740992","9007199254740991","4294967296","4294967295","y"], "keys");
+    assert(tab, ["1", "4294967294", "x", "18014398509481984", "9007199254740992", "9007199254740991", "4294967296", "4294967295", "y"], "keys");
 }
 
-function test_array()
-{
+function test_array() {
     var a, err;
 
     a = [1, 2, 3];
@@ -211,29 +232,28 @@ function test_array()
     a[4] = 3;
     assert(a.length, 5);
 
-    a = [1,2];
+    a = [1, 2];
     a.length = 5;
     a[4] = 1;
     a.length = 4;
     assert(a[4] !== 1, true, "array5");
 
-    a = [1,2];
-    a.push(3,4);
+    a = [1, 2];
+    a.push(3, 4);
     assert(a.join(), "1,2,3,4", "join");
 
-    a = [1,2,3,4,5];
-    Object.defineProperty(a, "3", { configurable: false });
+    a = [1, 2, 3, 4, 5];
+    Object.defineProperty(a, "3", {configurable: false});
     err = false;
     try {
         a.length = 2;
-    } catch(e) {
+    } catch (e) {
         err = true;
     }
     assert(err && a.toString() === "1,2,3,4");
 }
 
-function test_string()
-{
+function test_string() {
     var a;
     a = String("abc");
     assert(a.length, 3, "string");
@@ -314,35 +334,34 @@ function test_string()
     assert("aaa".lastIndexOf("", 4), 3);
     assert("aaa".lastIndexOf("", Infinity), 3);
 
-    assert("a,b,c".split(","), ["a","b","c"]);
-    assert(",b,c".split(","), ["","b","c"]);
-    assert("a,b,".split(","), ["a","b",""]);
+    assert("a,b,c".split(","), ["a", "b", "c"]);
+    assert(",b,c".split(","), ["", "b", "c"]);
+    assert("a,b,".split(","), ["a", "b", ""]);
 
-    assert("aaaa".split(), [ "aaaa" ]);
-    assert("aaaa".split(undefined, 0), [ ]);
-    assert("aaaa".split(""), [ "a", "a", "a", "a" ]);
-    assert("aaaa".split("", 0), [ ]);
-    assert("aaaa".split("", 1), [ "a" ]);
-    assert("aaaa".split("", 2), [ "a", "a" ]);
-    assert("aaaa".split("a"), [ "", "", "", "", "" ]);
-    assert("aaaa".split("a", 2), [ "", "" ]);
-    assert("aaaa".split("aa"), [ "", "", "" ]);
-    assert("aaaa".split("aa", 0), [ ]);
-    assert("aaaa".split("aa", 1), [ "" ]);
-    assert("aaaa".split("aa", 2), [ "", "" ]);
-    assert("aaaa".split("aaa"), [ "", "a" ]);
-    assert("aaaa".split("aaaa"), [ "", "" ]);
-    assert("aaaa".split("aaaaa"), [ "aaaa" ]);
-    assert("aaaa".split("aaaaa", 0), [  ]);
-    assert("aaaa".split("aaaaa", 1), [ "aaaa" ]);
+    assert("aaaa".split(), ["aaaa"]);
+    assert("aaaa".split(undefined, 0), []);
+    assert("aaaa".split(""), ["a", "a", "a", "a"]);
+    assert("aaaa".split("", 0), []);
+    assert("aaaa".split("", 1), ["a"]);
+    assert("aaaa".split("", 2), ["a", "a"]);
+    assert("aaaa".split("a"), ["", "", "", "", ""]);
+    assert("aaaa".split("a", 2), ["", ""]);
+    assert("aaaa".split("aa"), ["", "", ""]);
+    assert("aaaa".split("aa", 0), []);
+    assert("aaaa".split("aa", 1), [""]);
+    assert("aaaa".split("aa", 2), ["", ""]);
+    assert("aaaa".split("aaa"), ["", "a"]);
+    assert("aaaa".split("aaaa"), ["", ""]);
+    assert("aaaa".split("aaaaa"), ["aaaa"]);
+    assert("aaaa".split("aaaaa", 0), []);
+    assert("aaaa".split("aaaaa", 1), ["aaaa"]);
 
     assert(eval('"\0"'), "\0");
 
     assert("abc".padStart(Infinity, ""), "abc");
 }
 
-function test_math()
-{
+function test_math() {
     var a;
     a = 1.4;
     assert(Math.floor(a), 1);
@@ -350,8 +369,8 @@ function test_math()
     assert(Math.imul(0x12345678, 123), -1088058456);
     assert(Math.imul(0xB505, 0xB504), 2147441940);
     assert(Math.imul(0xB505, 0xB505), -2147479015);
-    assert(Math.imul((-2)**31, (-2)**31), 0);
-    assert(Math.imul(2**31-1, 2**31-1), 1);
+    assert(Math.imul((-2) ** 31, (-2) ** 31), 0);
+    assert(Math.imul(2 ** 31 - 1, 2 ** 31 - 1), 1);
     assert(Math.fround(0.1), 0.10000000149011612);
     assert(Math.hypot(), 0);
     assert(Math.hypot(-2), 2);
@@ -359,8 +378,7 @@ function test_math()
     assert(Math.abs(Math.hypot(3, 4, 5) - 7.0710678118654755) <= 1e-15);
 }
 
-function test_number()
-{
+function test_number() {
     assert(parseInt("123"), 123);
     assert(parseInt("  123r"), 123);
     assert(parseInt("0x123"), 0x123);
@@ -394,28 +412,29 @@ function test_number()
     assert((-1.125).toFixed(2), "-1.13");
 }
 
-function test_eval2()
-{
+function test_eval2() {
     var g_call_count = 0;
     /* force non strict mode for f1 and f2 */
     var f1 = new Function("eval", "eval(1, 2)");
     var f2 = new Function("eval", "eval(...[1, 2])");
+
     function g(a, b) {
         assert(a, 1);
         assert(b, 2);
         g_call_count++;
     }
+
     f1(g);
     f2(g);
     assert(g_call_count, 2);
 }
 
-function test_eval()
-{
+function test_eval() {
     function f(b) {
         var x = 1;
         return eval(b);
     }
+
     var r, a;
 
     r = eval("1+1;");
@@ -447,13 +466,12 @@ function test_eval()
     test_eval2();
 }
 
-function test_typed_array()
-{
+function test_typed_array() {
     var buffer, a, i, str;
 
     a = new Uint8Array(4);
     assert(a.length, 4);
-    for(i = 0; i < a.length; i++)
+    for (i = 0; i < a.length; i++)
         a[i] = i;
     assert(a.join(","), "0,1,2,3");
     a[0] = -1;
@@ -504,8 +522,7 @@ function test_typed_array()
     assert(a.toString(), "1,2,10,11");
 }
 
-function test_json()
-{
+function test_json() {
     var a, s;
     s = '{"x":1,"y":true,"z":null,"a":[1,2,3],"s":"str"}';
     a = JSON.parse(s);
@@ -515,8 +532,8 @@ function test_json()
     assert(JSON.stringify(a), s);
 
     /* indentation test */
-    assert(JSON.stringify([[{x:1,y:{},z:[]},2,3]],undefined,1),
-`[
+    assert(JSON.stringify([[{x: 1, y: {}, z: []}, 2, 3]], undefined, 1),
+        `[
  [
   {
    "x": 1,
@@ -529,8 +546,7 @@ function test_json()
 ]`);
 }
 
-function test_date()
-{
+function test_date() {
     // Date Time String format is YYYY-MM-DDTHH:mm:ss.sssZ
     // accepted date formats are: YYYY, YYYY-MM and YYYY-MM-DD
     // accepted time formats are: THH:mm, THH:mm:ss, THH:mm:ss.sss
@@ -557,25 +573,25 @@ function test_date()
     var d = new Date("2000T00:00");  // Jan 1st 2000, 0:00:00 local time
     assert(typeof d === 'object' && d.toString() != 'Invalid Date');
     assert((new Date('Jan 1 2000')).toISOString(),
-           d.toISOString());
+        d.toISOString());
     assert((new Date('Jan 1 2000 00:00')).toISOString(),
-           d.toISOString());
+        d.toISOString());
     assert((new Date('Jan 1 2000 00:00:00')).toISOString(),
-           d.toISOString());
+        d.toISOString());
     assert((new Date('Jan 1 2000 00:00:00 GMT+0100')).toISOString(),
-           '1999-12-31T23:00:00.000Z');
+        '1999-12-31T23:00:00.000Z');
     assert((new Date('Jan 1 2000 00:00:00 GMT+0200')).toISOString(),
-           '1999-12-31T22:00:00.000Z');
+        '1999-12-31T22:00:00.000Z');
     assert((new Date('Sat Jan 1 2000')).toISOString(),
-           d.toISOString());
+        d.toISOString());
     assert((new Date('Sat Jan 1 2000 00:00')).toISOString(),
-           d.toISOString());
+        d.toISOString());
     assert((new Date('Sat Jan 1 2000 00:00:00')).toISOString(),
-           d.toISOString());
+        d.toISOString());
     assert((new Date('Sat Jan 1 2000 00:00:00 GMT+0100')).toISOString(),
-           '1999-12-31T23:00:00.000Z');
+        '1999-12-31T23:00:00.000Z');
     assert((new Date('Sat Jan 1 2000 00:00:00 GMT+0200')).toISOString(),
-           '1999-12-31T22:00:00.000Z');
+        '1999-12-31T22:00:00.000Z');
 
     var d = new Date(1506098258091);
     assert(d.toISOString(), "2017-09-22T16:37:38.091Z");
@@ -585,20 +601,20 @@ function test_date()
     assert((new Date(a)).toISOString(), d.toISOString());
 
     assert((new Date("2020-01-01T01:01:01.123Z")).toISOString(),
-                     "2020-01-01T01:01:01.123Z");
+        "2020-01-01T01:01:01.123Z");
     /* implementation defined behavior */
     assert((new Date("2020-01-01T01:01:01.1Z")).toISOString(),
-                     "2020-01-01T01:01:01.100Z");
+        "2020-01-01T01:01:01.100Z");
     assert((new Date("2020-01-01T01:01:01.12Z")).toISOString(),
-                     "2020-01-01T01:01:01.120Z");
+        "2020-01-01T01:01:01.120Z");
     assert((new Date("2020-01-01T01:01:01.1234Z")).toISOString(),
-                     "2020-01-01T01:01:01.123Z");
+        "2020-01-01T01:01:01.123Z");
     assert((new Date("2020-01-01T01:01:01.12345Z")).toISOString(),
-                     "2020-01-01T01:01:01.123Z");
+        "2020-01-01T01:01:01.123Z");
     assert((new Date("2020-01-01T01:01:01.1235Z")).toISOString(),
-                     "2020-01-01T01:01:01.123Z");
+        "2020-01-01T01:01:01.123Z");
     assert((new Date("2020-01-01T01:01:01.9999Z")).toISOString(),
-                     "2020-01-01T01:01:01.999Z");
+        "2020-01-01T01:01:01.999Z");
 
     assert(Date.UTC(2017), 1483228800000);
     assert(Date.UTC(2017, 9), 1506816000000);
@@ -621,9 +637,9 @@ function test_date()
     if (!(typeof os !== 'undefined' && ['win32', 'cygwin'].includes(os.platform))) {
         // from test262/test/built-ins/Date/UTC/fp-evaluation-order.js
         assert(Date.UTC(1970, 0, 1, 80063993375, 29, 1, -288230376151711740), 29312,
-               'order of operations / precision in MakeTime');
+            'order of operations / precision in MakeTime');
         assert(Date.UTC(1970, 0, 213503982336, 0, 0, 0, -18446744073709552000), 34447360,
-               'precision in MakeDate');
+            'precision in MakeDate');
     }
     //assert(Date.UTC(2017 - 1e9, 9 + 12e9), 1506816000000);  // node fails this
     assert(Date.UTC(2017, 9, 22 - 1e10, 18 + 24e10), 1508695200000);
@@ -632,8 +648,7 @@ function test_date()
     assert(Date.UTC(2017, 9, 22, 18, 10, 11 - 1e12, 91 + 1000e12), 1508695811091);
 }
 
-function test_regexp()
-{
+function test_regexp() {
     var a, str;
     str = "abbbbbc";
     a = /(b+)c/.exec(str);
@@ -659,7 +674,7 @@ function test_regexp()
     assert(a.index === 1 && a[0] === "" && a[1] === "aaa");
 
     a = /(z)((a+)?(b+)?(c))*/.exec("zaacbbbcac");
-    assert(a, ["zaacbbbcac","z","ac","a",,"c"]);
+    assert(a, ["zaacbbbcac", "z", "ac", "a", , "c"]);
 
     a = eval("/\0a/");
     assert(a.toString(), "/\0a/");
@@ -682,8 +697,7 @@ function test_regexp()
     assert(a, null);
 }
 
-function test_symbol()
-{
+function test_symbol() {
     var a, b, obj, c;
     a = Symbol("abc");
     obj = {};
@@ -714,8 +728,7 @@ function test_symbol()
     assert(b.toString(), "Symbol(aaa)");
 }
 
-function test_map()
-{
+function test_map() {
     var a, i, n, tab, o, v;
     n = 1000;
 
@@ -730,19 +743,19 @@ function test_map()
 
     a.set(1n, 1n);
     assert(a.get(1n), 1n);
-    assert(a.get(2n**1000n - (2n**1000n - 1n)), 1n);
+    assert(a.get(2n ** 1000n - (2n ** 1000n - 1n)), 1n);
 
     a = new Map();
     tab = [];
-    for(i = 0; i < n; i++) {
-        v = { };
-        o = { id: i };
+    for (i = 0; i < n; i++) {
+        v = {};
+        o = {id: i};
         tab[i] = [o, v];
         a.set(o, v);
     }
 
     assert(a.size, n);
-    for(i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) {
         assert(a.get(tab[i][0]), tab[i][1]);
     }
 
@@ -757,61 +770,63 @@ function test_map()
     assert(a.size, 0);
 }
 
-function test_weak_map()
-{
+function test_weak_map() {
     var a, i, n, tab, o, v, n2;
     a = new WeakMap();
     n = 10;
     tab = [];
-    for(i = 0; i < n; i++) {
-        v = { };
-        o = { id: i };
+    for (i = 0; i < n; i++) {
+        v = {};
+        o = {id: i};
         tab[i] = [o, v];
         a.set(o, v);
     }
     o = null;
 
     n2 = n >> 1;
-    for(i = 0; i < n2; i++) {
+    for (i = 0; i < n2; i++) {
         a.delete(tab[i][0]);
     }
-    for(i = n2; i < n; i++) {
+    for (i = n2; i < n; i++) {
         tab[i][0] = null; /* should remove the object from the WeakMap too */
     }
     /* the WeakMap should be empty here */
 }
 
-function test_generator()
-{
-    function *f() {
+function test_generator() {
+    function* f() {
         var ret;
         yield 1;
         ret = yield 2;
         assert(ret, "next_arg");
         return 3;
     }
-    function *f2() {
+
+    function* f2() {
         yield 1;
         yield 2;
         return "ret_val";
     }
-    function *f1() {
-        var ret = yield *f2();
+
+    function* f1() {
+        var ret = yield* f2();
         assert(ret, "ret_val");
         return 3;
     }
-    function *f3() {
+
+    function* f3() {
         var ret;
         /* test stack consistency with nip_n to handle yield return +
          * finally clause */
         try {
             ret = 2 + (yield 1);
-        } catch(e) {
+        } catch (e) {
         } finally {
             ret++;
         }
         return ret;
     }
+
     var g, v;
     g = f();
     v = g.next();

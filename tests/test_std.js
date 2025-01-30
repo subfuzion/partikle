@@ -10,22 +10,24 @@ function assert(actual, expected, message) {
         return;
 
     if (actual !== null && expected !== null
-    &&  typeof actual == 'object' && typeof expected == 'object'
-    &&  actual.toString() === expected.toString())
+        && typeof actual == 'object' && typeof expected == 'object'
+        && actual.toString() === expected.toString())
         return;
 
     throw Error("assertion failed: got |" + actual + "|" +
-                ", expected |" + expected + "|" +
-                (message ? " (" + message + ")" : ""));
+        ", expected |" + expected + "|" +
+        (message ? " (" + message + ")" : ""));
 }
 
 // load more elaborate version of assert if available
-try { std.loadScript("test_assert.js"); } catch(e) {}
+try {
+    std.loadScript("test_assert.js");
+} catch (e) {
+}
 
 /*----------------*/
 
-function test_printf()
-{
+function test_printf() {
     assert(std.sprintf("a=%d s=%s", 123, "abc"), "a=123 s=abc");
     assert(std.sprintf("%010d", 123), "0000000123");
     assert(std.sprintf("%x", -2), "fffffffe");
@@ -35,8 +37,7 @@ function test_printf()
     assert(std.sprintf("%#lx", 0x7fffffffffffffffn), "0x7fffffffffffffff");
 }
 
-function test_file1()
-{
+function test_file1() {
     var f, len, str, size, buf, ret, i, str1;
 
     f = std.tmpfile();
@@ -56,42 +57,40 @@ function test_file1()
     buf = new Uint8Array(size);
     ret = f.read(buf.buffer, 0, size);
     assert(ret === size);
-    for(i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
         assert(buf[i] === str.charCodeAt(i));
 
     f.close();
 }
 
-function test_file2()
-{
+function test_file2() {
     var f, str, i, size;
     f = std.tmpfile();
     str = "hello world\n";
     size = str.length;
-    for(i = 0; i < size; i++)
+    for (i = 0; i < size; i++)
         f.putByte(str.charCodeAt(i));
     f.seek(0, std.SEEK_SET);
-    for(i = 0; i < size; i++) {
+    for (i = 0; i < size; i++) {
         assert(str.charCodeAt(i) === f.getByte());
     }
     assert(f.getByte() === -1);
     f.close();
 }
 
-function test_getline()
-{
+function test_getline() {
     var f, line, line_count, lines, i;
 
-    lines = ["hello world", "line 1", "line 2" ];
+    lines = ["hello world", "line 1", "line 2"];
     f = std.tmpfile();
-    for(i = 0; i < lines.length; i++) {
+    for (i = 0; i < lines.length; i++) {
         f.puts(lines[i], "\n");
     }
 
     f.seek(0, std.SEEK_SET);
     assert(!f.eof());
     line_count = 0;
-    for(;;) {
+    for (; ;) {
         line = f.getline();
         if (line === null)
             break;
@@ -104,8 +103,7 @@ function test_getline()
     f.close();
 }
 
-function test_popen()
-{
+function test_popen() {
     var str, f, fname = "tmp_file.txt";
     var content = "hello world";
 
@@ -126,8 +124,7 @@ function test_popen()
     os.remove(fname);
 }
 
-function test_ext_json()
-{
+function test_ext_json() {
     var expected, input, obj;
     expected = '{"x":false,"y":true,"z2":null,"a":[1,8,160],"s":"str"}';
     input = `{ "x":false, /*comments are allowed */
@@ -140,11 +137,10 @@ function test_ext_json()
     assert(JSON.stringify(obj), expected);
 }
 
-function test_os()
-{
+function test_os() {
     var fd, fpath, fname, fdir, buf, buf2, i, files, err, fdate, st, link_path;
 
-    const stdinIsTTY = !os.exec(["/bin/sh", "-c", "test -t 0"], { usePath: false });
+    const stdinIsTTY = !os.exec(["/bin/sh", "-c", "test -t 0"], {usePath: false});
 
     assert(os.isatty(0), stdinIsTTY, `isatty(STDIN)`);
 
@@ -164,7 +160,7 @@ function test_os()
     assert(fd >= 0);
 
     buf = new Uint8Array(10);
-    for(i = 0; i < buf.length; i++)
+    for (i = 0; i < buf.length; i++)
         buf[i] = i;
     assert(os.write(fd, buf.buffer, 0, buf.length) === buf.length);
 
@@ -172,7 +168,7 @@ function test_os()
     buf2 = new Uint8Array(buf.length);
     assert(os.read(fd, buf2.buffer, 0, buf2.length) === buf2.length);
 
-    for(i = 0; i < buf.length; i++)
+    for (i = 0; i < buf.length; i++)
         assert(buf[i] == buf2[i]);
 
     if (typeof BigInt !== "undefined") {
@@ -226,22 +222,21 @@ function test_os()
     assert(os.remove(fdir) === 0);
 }
 
-function test_os_exec()
-{
+function test_os_exec() {
     var ret, fds, pid, f, status;
 
     ret = os.exec(["true"]);
     assert(ret, 0);
 
-    ret = os.exec(["/bin/sh", "-c", "exit 1"], { usePath: false });
+    ret = os.exec(["/bin/sh", "-c", "exit 1"], {usePath: false});
     assert(ret, 1);
 
     fds = os.pipe();
     pid = os.exec(["sh", "-c", "echo $FOO"], {
         stdout: fds[1],
         block: false,
-        env: { FOO: "hello" },
-    } );
+        env: {FOO: "hello"},
+    });
     assert(pid >= 0);
     os.close(fds[1]); /* close the write end (as it is only in the child)  */
     f = std.fdopen(fds[0], "r");
@@ -253,7 +248,7 @@ function test_os_exec()
     assert(status & 0x7f, 0); /* exited */
     assert(status >> 8, 0); /* exit code */
 
-    pid = os.exec(["cat"], { block: false } );
+    pid = os.exec(["cat"], {block: false});
     assert(pid >= 0);
     os.kill(pid, os.SIGTERM);
     [ret, status] = os.waitpid(pid, 0);
@@ -262,23 +257,22 @@ function test_os_exec()
     assert(status & 0x7f, os.SIGTERM);
 }
 
-function test_timer()
-{
+function test_timer() {
     var th, i;
 
     /* just test that a timer can be inserted and removed */
     th = [];
-    for(i = 0; i < 3; i++)
-        th[i] = os.setTimeout(function () { }, 1000);
-    for(i = 0; i < 3; i++)
+    for (i = 0; i < 3; i++)
+        th[i] = os.setTimeout(function () {
+        }, 1000);
+    for (i = 0; i < 3; i++)
         os.clearTimeout(th[i]);
 }
 
 /* test closure variable handling when freeing asynchronous
    function */
-function test_async_gc()
-{
-    (async function run () {
+function test_async_gc() {
+    (async function run() {
         let obj = {}
 
         let done = () => {
@@ -288,7 +282,8 @@ function test_async_gc()
 
         Promise.resolve().then(done)
 
-        const p = new Promise(() => {})
+        const p = new Promise(() => {
+        })
 
         await p
     })();
@@ -304,4 +299,3 @@ test_os_exec();
 test_timer();
 test_ext_json();
 test_async_gc();
-
