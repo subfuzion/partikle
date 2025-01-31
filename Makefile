@@ -76,17 +76,17 @@ endif
 ifdef CONFIG_CLANG
   CC=clang
   C23=-std=c2x
-  CFLAGS += $(C23)
-  CFLAGS += -g -Wall -MMD -MF $(OBJDIR)/$(@F).d
-  CFLAGS += -Wextra
-  CFLAGS += -Wno-sign-compare
-  CFLAGS += -Wno-missing-field-initializers
-  CFLAGS += -Wundef -Wuninitialized
-  CFLAGS += -Wunused -Wno-unused-parameter
-  CFLAGS += -Wwrite-strings
-  CFLAGS += -Wchar-subscripts -funsigned-char
-  CFLAGS += -MMD -MF $(OBJDIR)/$(@F).d
-  CFLAGS += -Wno-unknown-warning-option
+  CFLAGS+=$(C23)
+  CFLAGS+=-g -Wall -MMD -MF $(OBJDIR)/$(@F).d
+  CFLAGS+=-Wextra
+  CFLAGS+=-Wno-sign-compare
+  CFLAGS+=-Wno-missing-field-initializers
+  CFLAGS+=-Wundef -Wuninitialized
+  CFLAGS+=-Wunused -Wno-unused-parameter
+  CFLAGS+=-Wwrite-strings
+  CFLAGS+=-Wchar-subscripts -funsigned-char
+  CFLAGS+=-MMD -MF $(OBJDIR)/$(@F).d
+  CFLAGS+=-Wno-unknown-warning-option
   ifdef CONFIG_DEFAULT_AR
     AR=ar
   else
@@ -100,9 +100,9 @@ ifdef CONFIG_CLANG
 else
   CC=gcc
   C23=-std=c2x
-  CFLAGS += $(C23)
-  CFLAGS += -g -Wall -MMD -MF $(OBJDIR)/$(@F).d
-  CFLAGS += -Wno-array-bounds -Wno-format-truncation
+  CFLAGS+=$(C23)
+  CFLAGS+=-g -Wall -MMD -MF $(OBJDIR)/$(@F).d
+  CFLAGS+=-Wno-array-bounds -Wno-format-truncation
   ifdef CONFIG_LTO
     AR=gcc-ar
   else
@@ -163,7 +163,9 @@ ifndef CONFIG_DARWIN
 CONFIG_SHARED_LIBS=y # building shared libraries is supported
 endif
 
-PROGS=ptkl ptklc run-test262 libquickjs.a
+PTKL=ptkl
+PTKLC=ptklc
+PROGS=$(PTKL) $(PTKLC) run-test262 libquickjs.a
 ifdef CONFIG_LTO
 PROGS+=libquickjs.lto.a
 endif
@@ -185,9 +187,9 @@ endif
 
 all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/ptkl.check.o $(PROGS)
 
-QJS_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
+PTKL_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
 
-QJS_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(QJS_LIB_OBJS)
+PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(PTKL_LIB_OBJS)
 
 LIBS=-lm -ldl -lpthread
 LIBS+=$(EXTRA_LIBS)
@@ -199,20 +201,20 @@ bump-version:
 $(OBJDIR):
 	mkdir -p $(OBJDIR) $(OBJDIR)/examples $(OBJDIR)/tests
 
-ptkl: $(QJS_OBJS)
+$(PTKL): $(PTKL_OBJS)
 	$(CC) $(LDFLAGS) $(LDEXPORT) -o $@ $^ $(LIBS)
 
-ptkl-debug: $(patsubst %.o, %.debug.o, $(QJS_OBJS))
+ptkl-debug: $(patsubst %.o, %.debug.o, $(PTKL_OBJS))
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-ptklc: $(OBJDIR)/ptklc_main.o $(OBJDIR)/ptklc.o $(QJS_LIB_OBJS)
+$(PTKLC): $(OBJDIR)/ptklc_main.o $(OBJDIR)/ptklc.o $(PTKL_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 ptkl-new-release: clean bump-version
-	make ptkl
+	make $(PTKL)
 
 ptkl-new-debug: clean bump-version
-	DEBUG=1 make ptkl
+	DEBUG=1 make $(PTKL)
 
 fuzz_eval: $(OBJDIR)/fuzz_eval.o $(OBJDIR)/fuzz_common.o libquickjs.fuzz.a
 	$(CC) $(CFLAGS_OPT) $^ -o fuzz_eval $(LIB_FUZZING_ENGINE)
@@ -231,19 +233,19 @@ else
 LTOEXT=
 endif
 
-libquickjs$(LTOEXT).a: $(QJS_LIB_OBJS)
+libquickjs$(LTOEXT).a: $(PTKL_LIB_OBJS)
 	$(AR) rcs $@ $^
 
 ifdef CONFIG_LTO
-libquickjs.a: $(patsubst %.o, %.nolto.o, $(QJS_LIB_OBJS))
+libquickjs.a: $(patsubst %.o, %.nolto.o, $(PTKL_LIB_OBJS))
 	$(AR) rcs $@ $^
 endif # CONFIG_LTO
 
-libquickjs.fuzz.a: $(patsubst %.o, %.fuzz.o, $(QJS_LIB_OBJS))
+libquickjs.fuzz.a: $(patsubst %.o, %.fuzz.o, $(PTKL_LIB_OBJS))
 	$(AR) rcs $@ $^
 
-repl.c: ptklc repl.js
-	./ptklc -c -o $@ -m repl.js
+repl.c: $(PTKLC) repl.js
+	./$(PTKLC) -c -o $@ -m repl.js
 
 # unicode
 ifneq ($(wildcard unicode/UnicodeData.txt),)
@@ -256,10 +258,10 @@ libunicode-table.h: unicode_gen
 	./unicode_gen unicode $@
 endif
 
-run-test262: $(OBJDIR)/run-test262.o $(QJS_LIB_OBJS)
+run-test262: $(OBJDIR)/run-test262.o $(PTKL_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-run-test262-debug: $(patsubst %.o, %.debug.o, $(OBJDIR)/run-test262.o $(QJS_LIB_OBJS))
+run-test262-debug: $(patsubst %.o, %.debug.o, $(OBJDIR)/run-test262.o $(PTKL_LIB_OBJS))
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(OBJDIR)/%.o: %.c | $(OBJDIR)
@@ -301,8 +303,8 @@ clean:
 
 install: all
 	mkdir -p "$(DESTDIR)$(PREFIX)/bin"
-	$(STRIP) ptkl
-	install -m755 ptkl "$(DESTDIR)$(PREFIX)/bin"
+	$(STRIP) $(PTKL)
+	install -m755 $(PTKL) "$(DESTDIR)$(PREFIX)/bin"
 	mkdir -p "$(DESTDIR)$(PREFIX)/lib/quickjs"
 	install -m644 libquickjs.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
 ifdef CONFIG_LTO
@@ -320,10 +322,10 @@ HELLO_OPTS=-fno-string-normalize -fno-map -fno-promise -fno-typedarray \
            -fno-typedarray -fno-regexp -fno-json -fno-eval -fno-proxy \
            -fno-date -fno-module-loader -fno-bigint
 
-hello.c: ptklc $(HELLO_SRCS)
-	./ptklc -e $(HELLO_OPTS) -o $@ $(HELLO_SRCS)
+hello.c: $(PTKLC) $(HELLO_SRCS)
+	./$(PTKLC) -e $(HELLO_OPTS) -o $@ $(HELLO_SRCS)
 
-examples/hello: $(OBJDIR)/hello.o $(QJS_LIB_OBJS)
+examples/hello: $(OBJDIR)/hello.o $(PTKL_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 # example of static JS compilation with modules
@@ -332,13 +334,13 @@ HELLO_MODULE_OPTS=-fno-string-normalize -fno-map -fno-typedarray \
            -fno-typedarray -fno-regexp -fno-json -fno-eval -fno-proxy \
            -fno-date -m
 
-examples/hello_module: ptklc libquickjs$(LTOEXT).a $(HELLO_MODULE_SRCS)
-	./ptklc $(HELLO_MODULE_OPTS) -o $@ $(HELLO_MODULE_SRCS)
+examples/hello_module: $(PTKLC) libquickjs$(LTOEXT).a $(HELLO_MODULE_SRCS)
+	./$(PTKLC) $(HELLO_MODULE_OPTS) -o $@ $(HELLO_MODULE_SRCS)
 
 # use of an external C module (static compilation)
 
-test_fib.c: ptklc examples/test_fib.js
-	./ptklc -e -M examples/fib.so,fib -m -o $@ examples/test_fib.js
+test_fib.c: $(PTKLC) examples/test_fib.js
+	./$(PTKLC) -e -M examples/fib.so,fib -m -o $@ examples/test_fib.js
 
 examples/test_fib: $(OBJDIR)/test_fib.o $(OBJDIR)/examples/fib.o libquickjs$(LTOEXT).a
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
@@ -377,7 +379,6 @@ epub: $(EPUB)
 doc/%.epub: doc/%.texi
 	texi2any --epub3 -o $@ $<
 
-
 ###############################################################################
 # tests
 
@@ -385,21 +386,21 @@ ifdef CONFIG_SHARED_LIBS
 test: tests/bjson.so examples/point.so
 endif
 
-test: ptkl
-	./ptkl tests/test_closure.js
-	./ptkl tests/test_language.js
-	./ptkl --std tests/test_builtin.js
-	./ptkl tests/test_loop.js
-	./ptkl tests/test_bignum.js
-	./ptkl tests/test_std.js
-	./ptkl tests/test_worker.js
+test: $(PTKL)
+	./$(PTKL) tests/test_closure.js
+	./$(PTKL) tests/test_language.js
+	./$(PTKL) --std tests/test_builtin.js
+	./$(PTKL) tests/test_loop.js
+	./$(PTKL) tests/test_bignum.js
+	./$(PTKL) tests/test_std.js
+	./$(PTKL) tests/test_worker.js
 ifdef CONFIG_SHARED_LIBS
 ifdef CONFIG_BIGNUM
-	./ptkl --bignum tests/test_bjson.js
+	./$(PTKL) --bignum tests/test_bjson.js
 else
-	./ptkl tests/test_bjson.js
+	./$(PTKL) tests/test_bjson.js
 endif
-	./ptkl examples/test_point.js
+	./$(PTKL) examples/test_point.js
 endif
 
 ifeq ($(wildcard test262o/tests.txt),)
@@ -446,19 +447,19 @@ node-test:
 ###############################################################################
 # benchmarks
 
-stats: ptkl
-	./ptkl -qd
+stats: $(PTKL)
+	./$(PTKL) -qd
 
 microbench: ptkl
-	./ptkl --std tests/microbench.js
+	./$(PTKL) --std tests/microbench.js
 
 node-microbench:
 	node tests/microbench.js -s microbench-node.txt
 	node --jitless tests/microbench.js -s microbench-node-jitless.txt
 
-bench-v8: ptkl
+bench-v8: $(PTKL)
 	make -C tests/bench-v8
-	./ptkl -d tests/bench-v8/combined.js
+	./$(PTKL) -d tests/bench-v8/combined.js
 
 node-bench-v8:
 	make -C tests/bench-v8
