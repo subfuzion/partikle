@@ -79,7 +79,7 @@ void namelist_add(namelist_t *lp, const char *name, const char *short_name,
 		  int flags) {
 	namelist_entry_t *e;
 	if (lp->count == lp->size) {
-		size_t newsize = lp->size + (lp->size >> 1) + 4;
+		const size_t newsize = lp->size + (lp->size >> 1) + 4;
 		namelist_entry_t *a =
 				realloc(lp->array,
 					sizeof(lp->array[0]) * newsize);
@@ -107,7 +107,7 @@ void namelist_free(namelist_t *lp) {
 	lp->size = 0;
 }
 
-namelist_entry_t *namelist_find(namelist_t *lp, const char *name) {
+namelist_entry_t *namelist_find(const namelist_t *lp, const char *name) {
 	int i;
 	for (i = 0; i < lp->count; i++) {
 		namelist_entry_t *e = &lp->array[i];
@@ -117,7 +117,7 @@ namelist_entry_t *namelist_find(namelist_t *lp, const char *name) {
 	return nullptr;
 }
 
-static void get_c_name(char *buf, size_t buf_size, const char *file) {
+static void get_c_name(char *buf, const size_t buf_size, const char *file) {
 	const char *p, *r;
 	size_t len, i;
 	int c;
@@ -194,7 +194,7 @@ static int js_module_dummy_init(JSContext *ctx, JSModuleDef *m) {
 	abort();
 }
 
-static void find_unique_cname(char *cname, size_t cname_size) {
+static void find_unique_cname(char *cname, const size_t cname_size) {
 	char cname1[1024];
 	int suffix_num;
 	size_t len, max_len;
