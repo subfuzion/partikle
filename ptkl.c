@@ -462,7 +462,7 @@ int main(int argc, char **argv) {
 	JSRuntime *rt;
 	struct trace_malloc_data trace_data = {nullptr};
 
-	struct runtime_opts opts;
+	struct runtime_opts opts = {};
 	const int optind = parse_runtime_args(argc, argv, &opts);
 
 	// Initialize the runtime

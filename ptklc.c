@@ -27,9 +27,7 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
-#if !defined(_WIN32)
 #include <sys/wait.h>
-#endif
 
 #include "cutils.h"
 #include "quickjs-libc.h"
@@ -365,8 +363,6 @@ void helpc() {
 	exit(1);
 }
 
-#if !defined(_WIN32)
-
 int exec_cmd(char **argv) {
 	int pid, status, ret;
 
@@ -437,7 +433,7 @@ static int output_executable(const char *out_filename, const char *cfilename,
 	if (dynamic_export)
 		*arg++ = "-rdynamic";
 	*arg++ = cfilename;
-	snprintf(libjsname, sizeof(libjsname), "%s/libquickjs%s%s.a",
+	snprintf(libjsname, sizeof(libjsname), "%s/libptkl%s%s.a",
 		 lib_dir, bn_suffix, lto_suffix);
 	*arg++ = libjsname;
 	*arg++ = "-lm";
@@ -456,16 +452,6 @@ static int output_executable(const char *out_filename, const char *cfilename,
 	unlink(cfilename);
 	return ret;
 }
-#else
-static int output_executable(const char *out_filename, const char *cfilename,
-                             BOOL use_lto, BOOL verbose, const char *exename)
-{
-    fprintf(stderr, "Executable output is not supported for this target\n");
-    exit(1);
-    return 0;
-}
-#endif
-
 
 typedef enum {
 	OUTPUT_C,
@@ -610,13 +596,8 @@ int compile(const int argc, char **argv) {
 	}
 
 	if (output_type == OUTPUT_EXECUTABLE) {
-#if defined(_WIN32) || defined(__ANDROID__)
-        /* XXX: find a /tmp directory ? */
-        snprintf(cfilename, sizeof(cfilename), "out%d.c", getpid());
-#else
 		snprintf(cfilename, sizeof(cfilename), "/tmp/out%d.c",
 			 getpid());
-#endif
 	} else {
 		pstrcpy(cfilename, sizeof(cfilename), out_filename);
 	}

@@ -23,54 +23,65 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-ifeq ($(shell uname -s),Darwin)
-CONFIG_DARWIN=y
-endif
-ifeq ($(shell uname -s),FreeBSD)
-CONFIG_FREEBSD=y
-endif
-# use link time optimization (smaller and faster executables but slower build)
-#CONFIG_LTO=y
-# consider warnings as errors (for development)
-#CONFIG_WERROR=y
+###############################################################################
+# optional settings
 
 # installation directory
 PREFIX?=/usr/local
 
+# include the code for BigFloat/BigDecimal and math mode
+CONFIG_BIGNUM=y
+
+# consider warnings as errors
+#CONFIG_WERROR=y
+
+# use link time optimization (smaller and faster executables but slower build)
+#CONFIG_LTO=y
+
 # use the gprof profiler
 #CONFIG_PROFILE=y
+
 # use address sanitizer
 #CONFIG_ASAN=y
+
 # use memory sanitizer
 #CONFIG_MSAN=y
+
 # use UB sanitizer
 #CONFIG_UBSAN=y
 
-# include the code for BigFloat/BigDecimal and math mode
-CONFIG_BIGNUM=y
+###############################################################################
+# configuration
+
+ifeq ($(shell uname -s),Darwin)
+  CONFIG_DARWIN=y
+endif
+ifeq ($(shell uname -s),FreeBSD)
+  CONFIG_FREEBSD=y
+endif
 
 OBJDIR=.obj
 
 ifdef CONFIG_ASAN
-OBJDIR:=$(OBJDIR)/asan
+  OBJDIR:=$(OBJDIR)/asan
 endif
 ifdef CONFIG_MSAN
-OBJDIR:=$(OBJDIR)/msan
+  OBJDIR:=$(OBJDIR)/msan
 endif
 ifdef CONFIG_UBSAN
-OBJDIR:=$(OBJDIR)/ubsan
+  OBJDIR:=$(OBJDIR)/ubsan
 endif
 
 ifdef CONFIG_DARWIN
-# use clang instead of gcc
-CONFIG_CLANG=y
-CONFIG_DEFAULT_AR=y
+  # use clang instead of gcc
+  CONFIG_CLANG=y
+  CONFIG_DEFAULT_AR=y
 endif
 ifdef CONFIG_FREEBSD
-# use clang instead of gcc
-CONFIG_CLANG=y
-CONFIG_DEFAULT_AR=y
-CONFIG_LTO=
+  # use clang instead of gcc
+  CONFIG_CLANG=y
+  CONFIG_DEFAULT_AR=y
+  CONFIG_LTO=
 endif
 
 ifdef CONFIG_CLANG
@@ -160,23 +171,31 @@ endif
 DEFINES+=-DCC=\"$(CC)\"
 
 ifndef CONFIG_DARWIN
-CONFIG_SHARED_LIBS=y # building shared libraries is supported
+CONFIG_SHARED_LIBS=y
+endif
+
+###############################################################################
+# targets
+
+ifdef CONFIG_LTO
+  LTOEXT=.lto
+else
+  LTOEXT=
 endif
 
 PTKL=ptkl
 PTKLC=ptklc
-PROGS=$(PTKL) $(PTKLC) run-test262 libquickjs.a
-ifdef CONFIG_LTO
-PROGS+=libquickjs.lto.a
-endif
+LIBPTKL=libptkl$(LTOEXT).a
+
+TARGETS=$(PTKL) $(PTKLC) $(LIBPTKL) run-test262
 
 # examples
 ifndef CONFIG_ASAN
 ifndef CONFIG_MSAN
 ifndef CONFIG_UBSAN
-PROGS+=examples/hello examples/hello_module examples/test_fib
+TARGETS+=examples/hello examples/hello_module examples/test_fib
 ifdef CONFIG_SHARED_LIBS
-PROGS+=examples/fib.so examples/point.so
+TARGETS+=examples/fib.so examples/point.so
 endif
 endif
 endif
@@ -185,7 +204,7 @@ endif
 ###############################################################################
 # rules
 
-all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/ptkl.check.o $(PROGS)
+all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/ptkl.check.o $(TARGETS)
 
 PTKL_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
 
@@ -228,18 +247,12 @@ fuzz_regexp: $(OBJDIR)/fuzz_regexp.o $(OBJDIR)/libregexp.fuzz.o $(OBJDIR)/cutils
 libfuzzer: fuzz_eval fuzz_compile fuzz_regexp
 
 ifdef CONFIG_LTO
-LTOEXT=.lto
+$(LIBPTKL): $(patsubst %.o, %.nolto.o, $(PTKL_LIB_OBJS))
+	$(AR) rcs $@ $^
 else
-LTOEXT=
+$(LIBPTKL): $(PTKL_LIB_OBJS)
+	$(AR) rcs $@ $^
 endif
-
-libquickjs$(LTOEXT).a: $(PTKL_LIB_OBJS)
-	$(AR) rcs $@ $^
-
-ifdef CONFIG_LTO
-libquickjs.a: $(patsubst %.o, %.nolto.o, $(PTKL_LIB_OBJS))
-	$(AR) rcs $@ $^
-endif # CONFIG_LTO
 
 libquickjs.fuzz.a: $(patsubst %.o, %.fuzz.o, $(PTKL_LIB_OBJS))
 	$(AR) rcs $@ $^
@@ -292,7 +305,7 @@ unicode_gen: $(OBJDIR)/unicode_gen.o $(OBJDIR)/cutils.o libunicode.c unicode_gen
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $(OBJDIR)/unicode_gen.o $(OBJDIR)/cutils.o
 
 clean:
-	rm -rf $(PROGS) $(OBJDIR)/ *.dSYM/
+	rm -rf $(TARGETS) $(OBJDIR)/ *.dSYM/
 	rm -f ptkl-debug
 	rm -f examples/*.so tests/*.so
 	rm -f examples/test_fib examples/hello examples/hello_module
@@ -305,13 +318,13 @@ install: all
 	mkdir -p "$(DESTDIR)$(PREFIX)/bin"
 	$(STRIP) $(PTKL)
 	install -m755 $(PTKL) "$(DESTDIR)$(PREFIX)/bin"
-	mkdir -p "$(DESTDIR)$(PREFIX)/lib/quickjs"
-	install -m644 libquickjs.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
+	mkdir -p "$(DESTDIR)$(PREFIX)/lib/ptkl"
+	install -m644 $(LIBPTKL) "$(DESTDIR)$(PREFIX)/lib/ptkl"
 ifdef CONFIG_LTO
-	install -m644 libquickjs.lto.a "$(DESTDIR)$(PREFIX)/lib/quickjs"
+	install -m644 $(LIBPTKL) "$(DESTDIR)$(PREFIX)/lib/ptkl"
 endif
 	mkdir -p "$(DESTDIR)$(PREFIX)/include/quickjs"
-	install -m644 quickjs.h quickjs-libc.h "$(DESTDIR)$(PREFIX)/include/quickjs"
+	install -m644 quickjs.h quickjs-libc.h "$(DESTDIR)$(PREFIX)/include/ptkl"
 
 ###############################################################################
 # examples
@@ -334,7 +347,7 @@ HELLO_MODULE_OPTS=-fno-string-normalize -fno-map -fno-typedarray \
            -fno-typedarray -fno-regexp -fno-json -fno-eval -fno-proxy \
            -fno-date -m
 
-examples/hello_module: $(PTKLC) libquickjs$(LTOEXT).a $(HELLO_MODULE_SRCS)
+examples/hello_module: $(PTKLC) $(LIBPTKL) $(HELLO_MODULE_SRCS)
 	./$(PTKLC) $(HELLO_MODULE_OPTS) -o $@ $(HELLO_MODULE_SRCS)
 
 # use of an external C module (static compilation)
@@ -342,7 +355,7 @@ examples/hello_module: $(PTKLC) libquickjs$(LTOEXT).a $(HELLO_MODULE_SRCS)
 test_fib.c: $(PTKLC) examples/test_fib.js
 	./$(PTKLC) -e -M examples/fib.so,fib -m -o $@ examples/test_fib.js
 
-examples/test_fib: $(OBJDIR)/test_fib.o $(OBJDIR)/examples/fib.o libquickjs$(LTOEXT).a
+examples/test_fib: $(OBJDIR)/test_fib.o $(OBJDIR)/examples/fib.o $(LIBPTKL)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 examples/fib.so: $(OBJDIR)/examples/fib.pic.o
@@ -471,10 +484,10 @@ tests/bjson.so: $(OBJDIR)/tests/bjson.pic.o
 BENCHMARKDIR=../quickjs-benchmarks
 
 run_sunspider_like: $(BENCHMARKDIR)/run_sunspider_like.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -DNO_INCLUDE_DIR -I. -o $@ $< libquickjs$(LTOEXT).a $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -DNO_INCLUDE_DIR -I. -o $@ $< $(LIBPTKL) $(LIBS)
 
 run_octane: $(BENCHMARKDIR)/run_octane.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -DNO_INCLUDE_DIR -I. -o $@ $< libquickjs$(LTOEXT).a $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -DNO_INCLUDE_DIR -I. -o $@ $< $(LIBPTKL) $(LIBS)
 
 benchmarks: run_sunspider_like run_octane
 	./run_sunspider_like $(BENCHMARKDIR)/kraken-1.0/

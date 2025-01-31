@@ -3199,10 +3199,7 @@ static JSClassID js_worker_class_id;
 static JSContext *(*js_worker_new_context_func)(JSRuntime *rt);
 
 static int atomic_add_int(int *ptr, int v) {
-	return atomic_fetch_add((_Atomic(uint32_t) *)
-	ptr, v
-	)
-	+v;
+	return atomic_fetch_add((_Atomic(uint32_t) *)ptr, v) + v;
 }
 
 /* shared array buffer allocator */
