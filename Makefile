@@ -190,15 +190,11 @@ LIBPTKL=libptkl$(LTOEXT).a
 TARGETS=$(PTKL) $(PTKLC) $(LIBPTKL) run-test262
 
 # examples
-ifndef CONFIG_ASAN
-ifndef CONFIG_MSAN
-ifndef CONFIG_UBSAN
-TARGETS+=examples/hello examples/hello_module examples/test_fib
-ifdef CONFIG_SHARED_LIBS
-TARGETS+=examples/fib.so examples/point.so
-endif
-endif
-endif
+ifndef $(or CONFIG_ASAN, CONFIG_MSAN, CONFIG_UBSAN)
+      TARGETS+=examples/hello examples/hello_module examples/test_fib
+      ifdef CONFIG_SHARED_LIBS
+        TARGETS+=examples/fib.so examples/point.so
+      endif
 endif
 
 ###############################################################################

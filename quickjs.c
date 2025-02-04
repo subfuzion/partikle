@@ -61,10 +61,8 @@
 #define MALLOC_OVERHEAD  8
 #endif
 
-#if !defined(_WIN32)
 /* define it if printf uses the RNDN rounding mode instead of RNDNA */
 #define CONFIG_PRINTF_RNDN
-#endif
 
 /* define to include Atomics.* operations which depend on the OS
    threads */
@@ -1966,8 +1964,6 @@ _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
 static size_t js_def_malloc_usable_size(const void *ptr) {
 #if defined(__APPLE__)
 	return malloc_size(ptr);
-#elif defined(_WIN32)
-    return _msize((void *)ptr);
 #elif defined(EMSCRIPTEN)
     return 0;
 #elif defined(__linux__) || defined(__GLIBC__)
@@ -45640,26 +45636,11 @@ static int getTimezoneOffset(int64_t time) {
 		}
 	}
 	ti = time;
-#if defined(_WIN32)
-    {
-        struct tm *tm;
-        time_t gm_ti, loc_ti;
-
-        tm = gmtime(&ti);
-        gm_ti = mktime(tm);
-
-        tm = localtime(&ti);
-        loc_ti = mktime(tm);
-
-        res = (gm_ti - loc_ti) / 60;
-    }
-#else
 	{
 		struct tm tm;
 		localtime_r(&ti, &tm);
 		res = -tm.tm_gmtoff / 60;
 	}
-#endif
 	return res;
 }
 

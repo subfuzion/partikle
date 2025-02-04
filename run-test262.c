@@ -2097,11 +2097,9 @@ int main(int argc, char **argv) {
 	BOOL is_module = FALSE;
 	clock_t clocks;
 
-#if !defined(_WIN32)
 	compact = !isatty(STDERR_FILENO);
 	/* Date tests assume California local time */
 	setenv("TZ", "America/Los_Angeles", 1);
-#endif
 
 	optind = 1;
 	while (optind < argc) {
