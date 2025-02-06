@@ -225,7 +225,7 @@ $(PTKL): $(PTKL_OBJS)
 ptkl-debug: $(patsubst %.o, %.debug.o, $(PTKL_OBJS))
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-$(PTKLC): $(OBJDIR)/ptklc_main.o $(OBJDIR)/ptklc.o $(PTKL_LIB_OBJS)
+$(PTKLC): $(OBJDIR)/ptklc_main.o $(OBJDIR)/ptklargs.o $(OBJDIR)/ptklc.o $(PTKL_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 ptkl-new-release: clean bump-version
