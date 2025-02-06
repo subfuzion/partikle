@@ -125,6 +125,7 @@ CFLAGS+=-fwrapv # ensure that signed overflows behave as expected
 ifdef CONFIG_WERROR
 CFLAGS+=-Werror
 endif
+
 DEFINES:=-D_GNU_SOURCE
 ifdef CONFIG_BIGNUM
 DEFINES+=-DCONFIG_BIGNUM
@@ -186,6 +187,7 @@ endif
 PTKL=ptkl
 PTKLC=ptklc
 LIBPTKL=libptkl$(LTOEXT).a
+DEFINES+=-DPTKL=\"$(PTKL)\"
 
 TARGETS=$(PTKL) $(PTKLC) $(LIBPTKL) run-test262
 
@@ -204,7 +206,8 @@ all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/ptkl.check.o $(TARGETS)
 
 PTKL_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
 
-PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(PTKL_LIB_OBJS)
+PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(OBJDIR)/ptklargs.o $(PTKL_LIB_OBJS)
+#PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(OBJDIR)/ptklargs.o $(LIBPTKL)
 
 LIBS=-lm -ldl -lpthread
 LIBS+=$(EXTRA_LIBS)
@@ -459,7 +462,7 @@ node-test:
 stats: $(PTKL)
 	./$(PTKL) -qd
 
-microbench: ptkl
+microbench: $(PTKL)
 	./$(PTKL) --std tests/microbench.js
 
 node-microbench:
