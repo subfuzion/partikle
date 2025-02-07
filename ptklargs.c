@@ -31,25 +31,25 @@
 
 void help(const int exit_code) {
 	printf("Partikle Runtime (version " CONFIG_VERSION ")\n"
-	       "usage: " PTKL " [options] [file [args]]\n"
-	       "-e  --eval EXPR            evaluate EXPR\n"
-	       "-v  --version              print version\n"
-	       "-h  --help                 show this help\n"
-	       //
-	       // hidden options:
-	       //
-	       //           "-m  --module               load as ES6 module (default=autodetect)\n"
-	       //           "    --script               load as ES6 script (default=autodetect)\n"
-	       //           "-I  --include file         include an additional file\n"
-	       //           "    --std                  make 'std' and 'os' available to the loaded script\n"
-	       //           "    --bignum               enable the bignum extensions (BigFloat, BigDecimal)\n"
-	       //           "-T  --trace                trace memory allocation\n"
-	       //           "-d  --dump                 dump the memory usage stats\n"
-	       //           "    --memory-limit n       limit the memory usage to 'n' bytes\n"
-	       //           "    --stack-size n         limit the stack size to 'n' bytes\n"
-	       //           "    --unhandled-rejection  dump unhandled promise rejections\n"
-	       //           "-q  --quit                 just instantiate the interpreter and quit\n"
-	       //
+		"usage: " PTKL " [options] [file [args]]\n"
+		"-e  --eval EXPR            evaluate EXPR\n"
+		"-v  --version              print version\n"
+		"-h  --help                 show this help\n"
+		//
+		// hidden options:
+		//
+		//           "-m  --module               load as ES6 module (default=autodetect)\n"
+		//           "    --script               load as ES6 script (default=autodetect)\n"
+		//           "-I  --include file         include an additional file\n"
+		//           "    --std                  make 'std' and 'os' available to the loaded script\n"
+		//           "    --bignum               enable the bignum extensions (BigFloat, BigDecimal)\n"
+		//           "-T  --trace                trace memory allocation\n"
+		//           "-d  --dump                 dump the memory usage stats\n"
+		//           "    --memory-limit n       limit the memory usage to 'n' bytes\n"
+		//           "    --stack-size n         limit the stack size to 'n' bytes\n"
+		//           "    --unhandled-rejection  dump unhandled promise rejections\n"
+		//           "-q  --quit                 just instantiate the interpreter and quit\n"
+		//
 	);
 	exit(exit_code);
 }
