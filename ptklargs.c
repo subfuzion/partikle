@@ -1,5 +1,5 @@
 /*
- * ptkl
+ * ptkl command line args
  *
  * Copyright (c) 2017-2024 Fabrice Bellard
  * Copyright (c) 2017-2024 Charlie Gordon
