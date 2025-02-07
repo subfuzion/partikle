@@ -25,5 +25,5 @@
 extern int compile(int argc, char **argv);
 
 int main(const int argc, char **argv) {
-        return compile(argc, argv);
+	return compile(argc, argv);
 }

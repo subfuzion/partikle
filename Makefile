@@ -220,6 +220,7 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR) $(OBJDIR)/examples $(OBJDIR)/tests
 
 $(PTKL): $(PTKL_OBJS)
+#$(PTKL): $(LIBPTKL)
 	$(CC) $(LDFLAGS) $(LDEXPORT) -o $@ $^ $(LIBS)
 
 ptkl-debug: $(patsubst %.o, %.debug.o, $(PTKL_OBJS))
