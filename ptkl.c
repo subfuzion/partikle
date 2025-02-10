@@ -39,7 +39,7 @@
 #include <malloc_np.h>
 #endif
 
-#include "ptklargs.h"
+#include "ptklcli.h"
 #include "cutils.h"
 #include "quickjs-libc.h"
 

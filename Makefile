@@ -206,8 +206,8 @@ all: $(OBJDIR) $(OBJDIR)/quickjs.check.o $(OBJDIR)/ptkl.check.o $(TARGETS)
 
 PTKL_LIB_OBJS=$(OBJDIR)/quickjs.o $(OBJDIR)/libregexp.o $(OBJDIR)/libunicode.o $(OBJDIR)/cutils.o $(OBJDIR)/quickjs-libc.o $(OBJDIR)/libbf.o
 
-PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(OBJDIR)/ptklargs.o $(PTKL_LIB_OBJS)
-#PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(OBJDIR)/ptklargs.o $(LIBPTKL)
+PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(OBJDIR)/ptklcli.o $(PTKL_LIB_OBJS)
+#PTKL_OBJS=$(OBJDIR)/ptkl.o $(OBJDIR)/ptklc.o $(OBJDIR)/repl.o $(OBJDIR)/ptklcli.o $(LIBPTKL)
 
 LIBS=-lm -ldl -lpthread
 LIBS+=$(EXTRA_LIBS)
@@ -226,7 +226,7 @@ $(PTKL): $(PTKL_OBJS)
 ptkl-debug: $(patsubst %.o, %.debug.o, $(PTKL_OBJS))
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-$(PTKLC): $(OBJDIR)/ptklc_main.o $(OBJDIR)/ptklargs.o $(OBJDIR)/ptklc.o $(PTKL_LIB_OBJS)
+$(PTKLC): $(OBJDIR)/ptklc_main.o $(OBJDIR)/ptklcli.o $(OBJDIR)/ptklc.o $(PTKL_LIB_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 ptkl-new-release: clean bump-version

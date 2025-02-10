@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "ptklargs.h"
+#include "ptklcli.h"
 #include "cutils.h"
 
 void help(const int exit_code) {
