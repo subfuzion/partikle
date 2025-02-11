@@ -24,6 +24,30 @@
 #ifndef ARGS_H
 #define ARGS_H
 
+#include "quickjs.h"
+
+struct cli;
+typedef void (*cli_fn)(struct cli *cli);
+typedef void (*cli_exit_fn)(struct cli *cli);
+
+struct cli {
+	JSRuntime *js_runtime;
+	JSContext *js_context;
+	int exit_status;
+
+	int argc;
+	char **argv;
+
+	cli_fn start;
+	cli_exit_fn stop;
+	cli_exit_fn help;
+	cli_exit_fn version;
+
+	cli_fn onsuccess;
+	cli_fn onfailure;
+};
+
+
 struct common_opts {};
 
 struct runtime_opts {
@@ -44,9 +68,7 @@ struct runtime_opts {
 
 struct compiler_opts {};
 
-void help(int exit_code);
-
-void version();
+void cli_init(struct cli *cli, int argc, char **argv);
 
 int parse_runtime_args(int argc, char **argv, struct runtime_opts *opts);
 

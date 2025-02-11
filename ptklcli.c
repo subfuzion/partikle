@@ -197,3 +197,46 @@ int parse_runtime_args(const int argc, char **argv, struct runtime_opts *opts) {
 	}
 	return optind;
 }
+
+void cli_start(struct cli *cli) {
+	printf("start\n");
+	cli->version(cli);
+	cli->onfailure(cli);
+}
+
+void cli_stop(struct cli *cli) {
+	if (!cli->exit_status) cli->exit_status = 1;
+	fprintf(stderr, "stop (exit status: %d)\n", cli->exit_status);
+	exit(cli->exit_status);
+}
+
+void cli_help(struct cli *cli) {
+	printf("help\n");
+	cli->stop(cli);
+}
+
+void cli_version(struct cli *cli) {
+	printf("version\n");
+	cli->stop(cli);
+}
+
+void cli_onsuccess(struct cli *cli) {
+	printf("onsuccess\n");
+	cli->stop(cli);
+}
+
+void cli_onfailure(struct cli *cli) {
+	printf("onfailure\n");
+	cli->stop(cli);
+}
+
+void cli_init(struct cli *cli, const int argc, char **argv) {
+	cli->argc = argc;
+	cli->argv = argv;
+	cli->start = cli_start;
+	cli->stop = cli_stop;
+	cli->help = cli_help;
+	cli->version = cli_version;
+	cli->onsuccess = cli_onsuccess;
+	cli->onfailure = cli_onfailure;
+}
