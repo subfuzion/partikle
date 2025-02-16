@@ -26,17 +26,29 @@
 
 #include "quickjs.h"
 
+struct cliconfig {
+	int argc;
+	char **argv;
+
+	const char *version;
+	const char *usage;
+
+	JSRuntime *js_runtime;
+	JSContext *js_context;
+
+	void (*initializer)(struct cliconfig *config);
+	void (*finalizer)(struct cliconfig *config);
+};
+
+void run(struct cliconfig *config);
+
 struct cli;
 typedef void (*cli_fn)(struct cli *cli);
 typedef void (*cli_exit_fn)(struct cli *cli);
-
 struct cli {
-	JSRuntime *js_runtime;
-	JSContext *js_context;
-	int exit_status;
+	struct cliconfig *config;
 
-	int argc;
-	char **argv;
+	int exit_status;
 
 	cli_fn start;
 	cli_exit_fn stop;
@@ -46,7 +58,6 @@ struct cli {
 	cli_fn onsuccess;
 	cli_fn onfailure;
 };
-
 
 struct common_opts {};
 
@@ -68,7 +79,7 @@ struct runtime_opts {
 
 struct compiler_opts {};
 
-void cli_init(struct cli *cli, int argc, char **argv);
+void cli_init(struct cli *cli, struct cliconfig *config);
 
 int parse_runtime_args(int argc, char **argv, struct runtime_opts *opts);
 

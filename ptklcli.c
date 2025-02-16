@@ -230,13 +230,18 @@ void cli_onfailure(struct cli *cli) {
 	cli->stop(cli);
 }
 
-void cli_init(struct cli *cli, const int argc, char **argv) {
-	cli->argc = argc;
-	cli->argv = argv;
+void cli_init(struct cli *cli , struct cliconfig *config) {
+	cli->config = config;
 	cli->start = cli_start;
 	cli->stop = cli_stop;
 	cli->help = cli_help;
 	cli->version = cli_version;
 	cli->onsuccess = cli_onsuccess;
 	cli->onfailure = cli_onfailure;
+}
+
+void run(struct cliconfig *config) {
+	struct cli cli = {};
+	cli_init(&cli, config);
+	cli.start(&cli);
 }

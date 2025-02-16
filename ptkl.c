@@ -260,10 +260,14 @@ int main(int argc, char **argv) {
 		return compile(--argc, argv);
 	}
 
-	struct cli cli = {};
-	cli_init(&cli, argc, argv);
-	cli.start(&cli);
+	struct cliconfig config = {
+		.argc =	argc,
+		.argv = argv,
+		.version = "0.1",
+		.usage = "ptkl [OPTS] ARG [...]",
+	};
 
+	run(&config);
 
 	JSRuntime *rt;
 	struct trace_malloc_data trace_data = {nullptr};
