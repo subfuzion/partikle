@@ -26,6 +26,43 @@
 
 #include "quickjs.h"
 
+enum ptkl_option_type {
+	OPT_STRING,
+	OPT_BOOL,
+	OPT_INT,
+};
+
+struct ptkl_option {
+	const char *short_opt;
+	const char *long_opt;
+	const char *help;
+	bool multi;
+
+	enum ptkl_option_type type;
+
+	union {
+		const char *string;
+		bool boolean;
+		int integer;
+	};
+
+	char *str;
+
+	void (*handler)(struct ptkl_option *opt);
+
+	struct ptkl_option *next;
+};
+
+struct ptkl_cli {
+	char *version;
+	char *help;
+	struct ptkl_option *options;
+};
+
+void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt);
+
+void ptkl_print_help(struct ptkl_cli *cli);
+
 struct cliconfig {
 	int argc;
 	char **argv;
@@ -37,14 +74,18 @@ struct cliconfig {
 	JSContext *js_context;
 
 	void (*initializer)(struct cliconfig *config);
+
 	void (*finalizer)(struct cliconfig *config);
 };
 
 void run(struct cliconfig *config);
 
 struct cli;
+
 typedef void (*cli_fn)(struct cli *cli);
+
 typedef void (*cli_exit_fn)(struct cli *cli);
+
 struct cli {
 	struct cliconfig *config;
 
@@ -59,7 +100,8 @@ struct cli {
 	cli_fn onfailure;
 };
 
-struct common_opts {};
+struct common_opts {
+};
 
 struct runtime_opts {
 	char *expr;
@@ -77,7 +119,8 @@ struct runtime_opts {
 	int bignum_ext;
 };
 
-struct compiler_opts {};
+struct compiler_opts {
+};
 
 void cli_init(struct cli *cli, struct cliconfig *config);
 

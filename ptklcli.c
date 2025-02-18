@@ -95,7 +95,7 @@ int parse_runtime_args(const int argc, char **argv, struct runtime_opts *opts) {
 			if (opt)
 				arg++;
 			if (opt == 'h' || opt == '?' || !
-			    strcmp(longopt, "help")) {
+				strcmp(longopt, "help")) {
 				help(0);
 				continue;
 			}
@@ -120,7 +120,7 @@ int parse_runtime_args(const int argc, char **argv, struct runtime_opts *opts) {
 					exit(1);
 				}
 				if (opts->include_count >= countof(
-					    opts->include_list)) {
+						opts->include_list)) {
 					fprintf(
 						stderr,
 						"too many included files");
@@ -187,10 +187,10 @@ int parse_runtime_args(const int argc, char **argv, struct runtime_opts *opts) {
 			}
 			if (opt) {
 				fprintf(stderr, "%s: unknown option '-%c'\n",
-					PTKL, opt);
+						PTKL, opt);
 			} else {
 				fprintf(stderr, "%s: unknown option '--%s'\n",
-					PTKL, longopt);
+						PTKL, longopt);
 			}
 			help(1);
 		}
@@ -230,7 +230,7 @@ void cli_onfailure(struct cli *cli) {
 	cli->stop(cli);
 }
 
-void cli_init(struct cli *cli , struct cliconfig *config) {
+void cli_init(struct cli *cli, struct cliconfig *config) {
 	cli->config = config;
 	cli->start = cli_start;
 	cli->stop = cli_stop;
@@ -244,4 +244,71 @@ void run(struct cliconfig *config) {
 	struct cli cli = {};
 	cli_init(&cli, config);
 	cli.start(&cli);
+}
+
+#define COLUMN_SEP "  "
+
+void print_option_usage(struct ptkl_option *opt, unsigned max_long_opt_width) {
+	printf(COLUMN_SEP "-%s"
+		   COLUMN_SEP "--%-*s"
+		   COLUMN_SEP "%s"
+		   "\n",
+		   opt->short_opt, max_long_opt_width, opt->long_opt, opt->help);
+}
+
+void ptkl_print_help(struct ptkl_cli *cli) {
+	printf("Partikle Runtime (version " CONFIG_VERSION ")\n"
+		"\n"
+		"  " PTKL " [options] <file> [args...]\n"
+		"  " PTKL " [options] <expr>\n"
+		"  " PTKL " [options] <command> [args...]\n"
+		//
+		// hidden options:
+		//
+		//           "-m  --module               load as ES6 module (default=autodetect)\n"
+		//           "    --script               load as ES6 script (default=autodetect)\n"
+		//           "-I  --include file         include an additional file\n"
+		//           "    --std                  make 'std' and 'os' available to the loaded script\n"
+		//           "    --bignum               enable the bignum extensions (BigFloat, BigDecimal)\n"
+		//           "-T  --trace                trace memory allocation\n"
+		//           "-d  --dump                 dump the memory usage stats\n"
+		//           "    --memory-limit n       limit the memory usage to 'n' bytes\n"
+		//           "    --stack-size n         limit the stack size to 'n' bytes\n"
+		//           "    --unhandled-rejection  dump unhandled promise rejections\n"
+		//           "-q  --quit                 just instantiate the interpreter and quit\n"
+		//
+		"\noptions:\n"
+	);
+
+	// Determine longest long option for column width (min width = 10)
+	unsigned long_opt_col_width = 10;
+	struct ptkl_option *opt = cli->options;
+	while (opt) {
+		const unsigned width = strlen(opt->long_opt);
+		if (width > long_opt_col_width) long_opt_col_width = width;
+		opt = opt->next;
+	}
+
+	opt = cli->options;
+	while (opt) {
+		print_option_usage(opt, long_opt_col_width);
+		opt = opt->next;
+	}
+
+	printf("Partikle Runtime (version " CONFIG_VERSION ")\n"
+		"\ncommands:\n"
+		"  help [command]\n"
+	);
+}
+
+void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt) {
+	if (!cli->options) {
+		cli->options = opt;
+		return;
+	}
+	struct ptkl_option *o = cli->options;
+	while (o->next) {
+		o = o->next;
+	}
+	o->next = opt;
 }

@@ -53,14 +53,14 @@ extern int compile(int argc, char **argv);
 static int bignum_ext = 0;
 
 static int eval_buf(JSContext *ctx, const void *buf, const size_t buf_len,
-		    const char *filename, const int eval_flags) {
+					const char *filename, const int eval_flags) {
 	JSValue val;
 	int ret;
 
 	if ((eval_flags & JS_EVAL_TYPE_MASK) == JS_EVAL_TYPE_MODULE) {
 		// For modules, compile then run to be able to set import.meta
 		val = JS_Eval(ctx, buf, buf_len, filename,
-			      eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
+					  eval_flags | JS_EVAL_FLAG_COMPILE_ONLY);
 		if (!JS_IsException(val)) {
 			js_module_set_import_meta(ctx, val, TRUE, TRUE);
 			val = JS_EvalFunction(ctx, val);
@@ -91,7 +91,7 @@ static int eval_file(JSContext *ctx, const char *filename, int module) {
 
 	if (module < 0) {
 		module = has_suffix(filename, ".mjs") ||
-			 JS_DetectModule((const char *) buf, buf_len);
+				 JS_DetectModule((const char *) buf, buf_len);
 	}
 	if (module)
 		eval_flags = JS_EVAL_TYPE_MODULE;
@@ -130,8 +130,8 @@ struct trace_malloc_data {
 };
 
 static unsigned long long js_trace_malloc_ptr_offset(const uint8_t *ptr,
-						     const struct
-						     trace_malloc_data *dp) {
+													 const struct
+													 trace_malloc_data *dp) {
 	return ptr - dp->base;
 }
 
@@ -165,10 +165,10 @@ js_trace_malloc_printf(const JSMallocState *s, const char *fmt, ...) {
 					printf("nullptr");
 				} else {
 					printf("H%+06lld.%zd",
-					       js_trace_malloc_ptr_offset(
-						       ptr, s->opaque),
-					       js_trace_malloc_usable_size(
-						       ptr));
+						   js_trace_malloc_ptr_offset(
+							   ptr, s->opaque),
+						   js_trace_malloc_usable_size(
+							   ptr));
 				}
 				fmt++;
 				continue;
@@ -252,7 +252,7 @@ static const JSMallocFunctions trace_mf = {
 	js_trace_malloc_usable_size,
 };
 
-int main(int argc, char **argv) {
+int main_old(int argc, char **argv) {
 	if (argc > 1 && !strcmp(argv[1], "compile")) {
 		for (int i = 1; i < argc; i++) {
 			argv[i] = argv[i + 1];
@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
 	}
 
 	struct cliconfig config = {
-		.argc =	argc,
+		.argc = argc,
 		.argv = argv,
 		.version = "0.1",
 		.usage = "ptkl [OPTS] ARG [...]",
@@ -329,7 +329,7 @@ int main(int argc, char **argv) {
 					"globalThis.std = std;\n"
 					"globalThis.os = os;\n";
 			eval_buf(ctx, str, strlen(str), "<input>",
-				 JS_EVAL_TYPE_MODULE);
+					 JS_EVAL_TYPE_MODULE);
 		}
 
 		for (int i = 0; i < opts.include_count; i++) {
@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
 
 		if (opts.expr) {
 			if (eval_buf(ctx, opts.expr, strlen(opts.expr),
-				     "<cmdline>", 0))
+						 "<cmdline>", 0))
 				goto fail;
 		} else if (optind >= argc) {
 			/* interactive mode */
@@ -398,4 +398,34 @@ fail:
 	JS_FreeContext(ctx);
 	JS_FreeRuntime(rt);
 	return 1;
+}
+
+int main(int argc, char **argv) {
+	struct ptkl_option eval_option = {
+		.type = OPT_STRING,
+		.short_opt = "e",
+		.long_opt = "eval",
+		.help = "Evaluate <expr>",
+	};
+	struct ptkl_option version_option = {
+		.type = OPT_STRING,
+		.short_opt = "v",
+		.long_opt = "version",
+		.help = "Print version",
+	};
+	struct ptkl_option help_option = {
+		.type = OPT_BOOL,
+		.short_opt = "h",
+		.long_opt = "help",
+		.help = "Print this help",
+	};
+
+	struct ptkl_cli cli;
+	ptkl_add_option(&cli, &eval_option);
+	ptkl_add_option(&cli, &version_option);
+	ptkl_add_option(&cli, &help_option);
+
+	ptkl_print_help(&cli);
+
+	return 0;
 }
