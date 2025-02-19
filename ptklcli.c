@@ -259,9 +259,10 @@ void print_option_usage(struct ptkl_option *opt, unsigned max_long_opt_width) {
 void ptkl_print_help(struct ptkl_cli *cli) {
 	printf("Partikle Runtime (version " CONFIG_VERSION ")\n"
 		"\n"
-		"  " PTKL " [options] <file> [args...]\n"
-		"  " PTKL " [options] <expr>\n"
 		"  " PTKL " [options] <command> [args...]\n"
+		"  " PTKL " [options] <expr> [args...]\n"
+		"  " PTKL " [options] <file> [args...]\n"
+		"  " PTKL " [options]\n"
 		//
 		// hidden options:
 		//
@@ -280,6 +281,8 @@ void ptkl_print_help(struct ptkl_cli *cli) {
 		"\noptions:\n"
 	);
 
+	printf("\noptions:\n");
+
 	// Determine longest long option for column width (min width = 10)
 	unsigned long_opt_col_width = 10;
 	struct ptkl_option *opt = cli->options;
@@ -295,10 +298,9 @@ void ptkl_print_help(struct ptkl_cli *cli) {
 		opt = opt->next;
 	}
 
-	printf("Partikle Runtime (version " CONFIG_VERSION ")\n"
-		"\ncommands:\n"
-		"  help [command]\n"
-	);
+	printf("\ncommands:\n");
+	printf("  eval <expr> [args...]\n");
+	printf("  run <file> [args...]\n");
 }
 
 void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt) {

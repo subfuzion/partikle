@@ -53,9 +53,17 @@ struct ptkl_option {
 	struct ptkl_option *next;
 };
 
+struct ptkl_command {
+	const char *name;
+	const char *help;
+	struct ptkl_option *options;
+	struct ptkl_command *parent;
+	struct ptkl_command *next;
+};
+
 struct ptkl_cli {
-	char *version;
-	char *help;
+	const char *version;
+	const char *help;
 	struct ptkl_option *options;
 };
 

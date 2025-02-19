@@ -3,9 +3,7 @@ import { Point } from "./point.so";
 
 function assert(b, str)
 {
-    if (b) {
-        return;
-    } else {
+    if (!b) {
         throw Error("assertion failed: " + str);
     }
 }
@@ -18,7 +16,7 @@ class ColorPoint extends Point {
     get_color() {
         return this.color;
     }
-};
+}
 
 function main()
 {
