@@ -33,11 +33,11 @@ enum ptkl_option_type {
 };
 
 struct ptkl_option {
+	struct ptkl_option *next;
 	const char *short_opt;
 	const char *long_opt;
 	const char *help;
 	bool multi;
-
 	enum ptkl_option_type type;
 
 	union {
@@ -46,30 +46,44 @@ struct ptkl_option {
 		int integer;
 	};
 
-	char *str;
-
 	void (*handler)(struct ptkl_option *opt);
-
-	struct ptkl_option *next;
 };
 
 struct ptkl_command {
+	struct ptkl_command *next;
+	struct ptkl_command *parent;
+	struct ptkl_command *subcommand;
 	const char *name;
 	const char *help;
 	struct ptkl_option *options;
-	struct ptkl_command *parent;
-	struct ptkl_command *next;
+
+	void (*hook)(struct ptkl_command *cmd);
+
+	void (*handler)(struct ptkl_command *cmd, int argc, char **argv);
 };
 
+void ptkl_command_init(struct ptkl_command *cmd, struct ptkl_command *parent,
+					   const char *name, const char *help);
+
+void ptkl_command_add_option(struct ptkl_command *cmd, struct ptkl_option *opt);
+
+void ptkl_command_add_subcommand(struct ptkl_command *cmd,
+								 struct ptkl_command *subcommand);
+
 struct ptkl_cli {
+	const char *name;
 	const char *version;
-	const char *help;
+	struct ptkl_command *root;
 	struct ptkl_option *options;
 };
 
+void ptkl_cli_init(struct ptkl_cli *cli);
+
+void ptkl_cli_add_command(struct ptkl_cli *cli, struct ptkl_command *cmd);
+
 void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt);
 
-void ptkl_print_help(struct ptkl_cli *cli);
+void ptkl_print_help(const struct ptkl_cli *cli);
 
 struct cliconfig {
 	int argc;

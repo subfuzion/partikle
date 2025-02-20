@@ -401,6 +401,11 @@ fail:
 }
 
 int main(int argc, char **argv) {
+	const struct ptkl_cli cli = {
+		.name = PTKL,
+		.version = CONFIG_VERSION,
+	};
+
 	struct ptkl_option eval_option = {
 		.type = OPT_STRING,
 		.short_opt = "e",
@@ -420,7 +425,6 @@ int main(int argc, char **argv) {
 		.help = "Print this help",
 	};
 
-	struct ptkl_cli cli;
 	ptkl_add_option(&cli, &eval_option);
 	ptkl_add_option(&cli, &version_option);
 	ptkl_add_option(&cli, &help_option);
