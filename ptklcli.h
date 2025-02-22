@@ -26,65 +26,6 @@
 
 #include "quickjs.h"
 
-enum ptkl_option_type {
-	OPT_STRING,
-	OPT_BOOL,
-	OPT_INT,
-};
-
-struct ptkl_option {
-	struct ptkl_option *next;
-	const char *short_opt;
-	const char *long_opt;
-	const char *help;
-	bool multi;
-	enum ptkl_option_type type;
-
-	union {
-		const char *string;
-		bool boolean;
-		int integer;
-	};
-
-	void (*handler)(struct ptkl_option *opt);
-};
-
-struct ptkl_command {
-	struct ptkl_command *next;
-	struct ptkl_command *parent;
-	struct ptkl_command *subcommand;
-	const char *name;
-	const char *help;
-	struct ptkl_option *options;
-
-	void (*hook)(struct ptkl_command *cmd);
-
-	void (*handler)(struct ptkl_command *cmd, int argc, char **argv);
-};
-
-void ptkl_command_init(struct ptkl_command *cmd, struct ptkl_command *parent,
-					   const char *name, const char *help);
-
-void ptkl_command_add_option(struct ptkl_command *cmd, struct ptkl_option *opt);
-
-void ptkl_command_add_subcommand(struct ptkl_command *cmd,
-								 struct ptkl_command *subcommand);
-
-struct ptkl_cli {
-	const char *name;
-	const char *version;
-	struct ptkl_command *root;
-	struct ptkl_option *options;
-};
-
-void ptkl_cli_init(struct ptkl_cli *cli);
-
-void ptkl_cli_add_command(struct ptkl_cli *cli, struct ptkl_command *cmd);
-
-void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt);
-
-void ptkl_print_help(const struct ptkl_cli *cli);
-
 struct cliconfig {
 	int argc;
 	char **argv;
@@ -96,7 +37,6 @@ struct cliconfig {
 	JSContext *js_context;
 
 	void (*initializer)(struct cliconfig *config);
-
 	void (*finalizer)(struct cliconfig *config);
 };
 
@@ -147,5 +87,110 @@ struct compiler_opts {
 void cli_init(struct cli *cli, struct cliconfig *config);
 
 int parse_runtime_args(int argc, char **argv, struct runtime_opts *opts);
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+// forward declarations
+enum ptkl_parse_type;
+union ptkl_parse_data;
+struct ptkl_parse_value;
+struct ptkl_error;
+struct ptkl_context;
+struct ptkl_cli;
+struct ptkl_arg;
+struct ptkl_option;
+struct ptkl_command;
+
+enum ptkl_parse_type {
+	OPT_STRING,
+	OPT_BOOL,
+	OPT_INT,
+};
+
+union ptkl_parse_data {
+	const char *string;
+	bool boolean;
+	int integer;
+	union ptkl_parse_data *list;
+};
+
+struct ptkl_parse_value {
+	enum ptkl_parse_type type;
+	union ptkl_parse_data *data;
+};
+
+struct ptkl_error {
+	const char *msg;
+
+	// internal
+	struct ptkl_command_error *next;
+};
+
+struct ptkl_context {
+	struct ptkl_cli *cli;
+	struct ptkl_command *command;
+	int argc;
+	const char **argv;
+	struct ptkl_error *errors;
+};
+
+struct ptkl_cli {
+	const char *name;
+	const char *version;
+
+	void (*run)(struct ptkl_cli *cli, int argc, char **argv);
+
+	// internal
+	struct ptkl_command *command;
+};
+
+struct ptkl_option {
+	const char *short_opt;
+	const char *long_opt;
+	const char *help;
+	bool multi;
+	struct ptkl_parse_value value;
+
+	void (*handler)(const struct ptkl_option *opt);
+
+	// internal
+	struct ptkl_option *next;
+};
+
+struct ptkl_arg {
+	const char *name;
+	bool required;
+	bool multi;
+	struct ptkl_parse_value value;
+
+	// internal
+	struct ptkl_arg *next;
+};
+
+struct ptkl_command {
+	const char *name; // auto assigned for root commandA
+	const char *help;
+	const char *category;
+	const char *example;
+
+	void (*hook)(struct ptkl_command *cmd);
+	void (*handler)(struct ptkl_context *ctx);
+
+	// internal
+	struct ptkl_command *next;
+	struct ptkl_command *parent;
+	struct ptkl_command *subcommand;
+	struct ptkl_option *options;
+	struct ptkl_arg *args;
+};
+
+void ptkl_cli_add_command(struct ptkl_cli *cli, struct ptkl_command *cmd);
+void ptkl_command_add_option(struct ptkl_command *cmd, struct ptkl_option *opt);
+void ptkl_command_add_subcommand(struct ptkl_command *cmd,
+								 struct ptkl_command *subcommand);
+
+void ptkl_cli_help(const struct ptkl_cli *cli);
 
 #endif  /* ARGS_H */

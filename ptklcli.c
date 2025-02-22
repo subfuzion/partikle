@@ -29,6 +29,8 @@
 #include "ptklcli.h"
 #include "cutils.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
 void help(const int exit_code) {
 	printf("Partikle Runtime (version " CONFIG_VERSION ")\n"
 		"usage: " PTKL " [options] [file [args]]\n"
@@ -54,10 +56,16 @@ void help(const int exit_code) {
 	exit(exit_code);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
 void version() {
 	printf("%s %s\n", PTKL, CONFIG_VERSION);
 	exit(0);
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 // Don't use getopt so we can pass command line to scripts
 int parse_runtime_args(const int argc, char **argv, struct runtime_opts *opts) {
@@ -198,11 +206,15 @@ int parse_runtime_args(const int argc, char **argv, struct runtime_opts *opts) {
 	return optind;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
 void cli_start(struct cli *cli) {
 	printf("start\n");
 	cli->version(cli);
 	cli->onfailure(cli);
 }
+
 
 void cli_stop(struct cli *cli) {
 	if (!cli->exit_status) cli->exit_status = 1;
@@ -210,25 +222,30 @@ void cli_stop(struct cli *cli) {
 	exit(cli->exit_status);
 }
 
+
 void cli_help(struct cli *cli) {
 	printf("help\n");
 	cli->stop(cli);
 }
+
 
 void cli_version(struct cli *cli) {
 	printf("version\n");
 	cli->stop(cli);
 }
 
+
 void cli_onsuccess(struct cli *cli) {
 	printf("onsuccess\n");
 	cli->stop(cli);
 }
 
+
 void cli_onfailure(struct cli *cli) {
 	printf("onfailure\n");
 	cli->stop(cli);
 }
+
 
 void cli_init(struct cli *cli, struct cliconfig *config) {
 	cli->config = config;
@@ -240,21 +257,44 @@ void cli_init(struct cli *cli, struct cliconfig *config) {
 	cli->onfailure = cli_onfailure;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
 void run(struct cliconfig *config) {
 	struct cli cli = {};
 	cli_init(&cli, config);
 	cli.start(&cli);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
 #define COLUMN_SEP "  "
 
-static void print_option_help(const struct ptkl_option *opt, const unsigned max_long_opt_width) {
+
+static void print_option_help(const struct ptkl_option *opt,
+							  const unsigned max_long_opt_width) {
 	printf(COLUMN_SEP "-%s"
 		   COLUMN_SEP "--%-*s"
 		   COLUMN_SEP "%s"
 		   "\n",
-		   opt->short_opt, max_long_opt_width, opt->long_opt, opt->help);
+		   opt->short_opt, max_long_opt_width, opt->long_opt, opt->help
+	);
 }
+
+
+static void print_command_help(const struct ptkl_command *cmd, bool detailed) {
+	printf(COLUMN_SEP "-%s"
+		   "\n",
+		   cmd->name
+	);
+	if (detailed) {
+		// print subcommands
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 // hidden options:
 //
@@ -270,21 +310,21 @@ static void print_option_help(const struct ptkl_option *opt, const unsigned max_
 //           "    --unhandled-rejection  dump unhandled promise rejections\n"
 //           "-q  --quit                 just instantiate the interpreter and quit\n"
 //
-void ptkl_print_help(const struct ptkl_cli *cli) {
+void ptkl_cli_help(const struct ptkl_cli *cli) {
 
-	printf("Partikle Runtime (version %s)\n\n", cli->version);
-	{
+	printf("Partikle Runtime (version %s)\n\n", cli->version); {
 		printf("  %s [options] <command> [args...]\n", cli->name);
 		printf("  %s [options] <expr> [args...]\n", cli->name);
 		printf("  %s [options] <file> [args...]\n", cli->name);
 		printf("  %s [options]\n", cli->name);
 	}
 
-	printf("\noptions:\n");
-	{
+	printf("\noptions:\n"); {
+		struct ptkl_command *root_cmd = cli->command;
+		struct ptkl_option *opt = root_cmd->options;
+
 		// Compute long option column width (min width = 10)
 		unsigned long_opt_col_width = 10;
-		const struct ptkl_option *opt = cli->options;
 
 		while (opt) {
 			const unsigned width = strlen(opt->long_opt);
@@ -292,29 +332,64 @@ void ptkl_print_help(const struct ptkl_cli *cli) {
 			opt = opt->next;
 		}
 
-		opt = cli->options;
+		opt = root_cmd->options;
 		while (opt) {
 			print_option_help(opt, long_opt_col_width);
 			opt = opt->next;
 		}
 	}
 
-
-	printf("\ncommands:\n");
-	{
-		printf("  eval <expr> [args...]\n");
-		printf("  run <file> [args...]\n");
+	printf("\nsubcommands:\n"); {
+		// printf("  eval <expr> [args...]\n");
+		// printf("  run <file> [args...]\n");
+		struct ptkl_command *cmd = cli->command->subcommand;
+		while (cmd) {
+			print_command_help(cmd, false);
+			cmd = cmd->next;
+		}
 	}
 }
 
-void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt) {
-	if (!cli->options) {
-		cli->options = opt;
+
+////////////////////////////////////////////////////////////////////////////////
+
+// void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt) {
+// 	if (!cli->options) {
+// 		cli->options = opt;
+// 		return;
+// 	}
+// 	struct ptkl_option *o = cli->options;
+// 	while (o->next) {
+// 		o = o->next;
+// 	}
+// 	o->next = opt;
+// }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ptkl_command_add_option(struct ptkl_command *cmd,
+							 struct ptkl_option *opt) {
+	if (!cmd->options) {
+		cmd->options = opt;
 		return;
 	}
-	struct ptkl_option *o = cli->options;
+	struct ptkl_option *o = cmd->options;
 	while (o->next) {
 		o = o->next;
 	}
 	o->next = opt;
+}
+
+
+void ptkl_command_add_subcommand(struct ptkl_command *cmd,
+								 struct ptkl_command *subcommand) {
+	if (!cmd->subcommand) {
+		cmd->subcommand = subcommand;
+		return;
+	}
+	struct ptkl_command *c = cmd->subcommand;
+	while (c->next) {
+		c = c->next;
+	}
+	c->next = subcommand;
 }

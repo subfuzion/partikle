@@ -43,6 +43,8 @@
 #include "cutils.h"
 #include "quickjs-libc.h"
 
+////////////////////////////////////////////////////////////////////////////////
+
 extern const uint8_t qjsc_repl[];
 extern const uint32_t qjsc_repl_size;
 
@@ -51,6 +53,8 @@ extern int compile(int argc, char **argv);
 // Automatically compiled with ecmascript standard bigint support, so this
 // just disables non-standard bigdecimal, bigfloat, and related extensions
 static int bignum_ext = 0;
+
+////////////////////////////////////////////////////////////////////////////////
 
 static int eval_buf(JSContext *ctx, const void *buf, const size_t buf_len,
 					const char *filename, const int eval_flags) {
@@ -79,6 +83,7 @@ static int eval_buf(JSContext *ctx, const void *buf, const size_t buf_len,
 	return ret;
 }
 
+
 static int eval_file(JSContext *ctx, const char *filename, int module) {
 	int eval_flags;
 	size_t buf_len;
@@ -102,6 +107,9 @@ static int eval_file(JSContext *ctx, const char *filename, int module) {
 	return ret;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
 // Also used to initialize the worker context
 static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	JSContext *ctx = JS_NewContext(rt);
@@ -119,6 +127,9 @@ static JSContext *JS_NewCustomContext(JSRuntime *rt) {
 	return ctx;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+
 #if defined(__APPLE__)
 #define MALLOC_OVERHEAD  0
 #else
@@ -129,11 +140,13 @@ struct trace_malloc_data {
 	uint8_t *base;
 };
 
+
 static unsigned long long js_trace_malloc_ptr_offset(const uint8_t *ptr,
 													 const struct
 													 trace_malloc_data *dp) {
 	return ptr - dp->base;
 }
+
 
 // Default memory allocation functions with memory limitation
 static size_t js_trace_malloc_usable_size(const void *ptr) {
@@ -148,6 +161,7 @@ static size_t js_trace_malloc_usable_size(const void *ptr) {
     return malloc_usable_size((void *)ptr);
 #endif
 }
+
 
 static void
 __attribute__((format(printf, 2, 3)))
@@ -185,9 +199,11 @@ js_trace_malloc_printf(const JSMallocState *s, const char *fmt, ...) {
 	va_end(ap);
 }
 
+
 static void js_trace_malloc_init(struct trace_malloc_data *s) {
 	free(s->base = malloc(8));
 }
+
 
 static void *js_trace_malloc(JSMallocState *s, const size_t size) {
 	// Do not allocate zero bytes: behavior is platform dependent
@@ -205,6 +221,7 @@ static void *js_trace_malloc(JSMallocState *s, const size_t size) {
 	return ptr;
 }
 
+
 static void js_trace_free(JSMallocState *s, void *ptr) {
 	if (!ptr)
 		return;
@@ -214,6 +231,7 @@ static void js_trace_free(JSMallocState *s, void *ptr) {
 	s->malloc_size -= js_trace_malloc_usable_size(ptr) + MALLOC_OVERHEAD;
 	free(ptr);
 }
+
 
 static void *js_trace_realloc(JSMallocState *s, void *ptr, const size_t size) {
 	if (!ptr) {
@@ -245,12 +263,15 @@ static void *js_trace_realloc(JSMallocState *s, void *ptr, const size_t size) {
 	return ptr;
 }
 
+
 static const JSMallocFunctions trace_mf = {
 	js_trace_malloc,
 	js_trace_free,
 	js_trace_realloc,
 	js_trace_malloc_usable_size,
 };
+
+////////////////////////////////////////////////////////////////////////////////
 
 int main_old(int argc, char **argv) {
 	if (argc > 1 && !strcmp(argv[1], "compile")) {
@@ -400,36 +421,74 @@ fail:
 	return 1;
 }
 
-int main(int argc, char **argv) {
-	const struct ptkl_cli cli = {
-		.name = PTKL,
-		.version = CONFIG_VERSION,
-	};
 
+////////////////////////////////////////////////////////////////////////////////
+
+void root_command_handler(struct ptkl_context *ctx) {
+	printf("root: %s\n", ctx->command->name);
+}
+
+void run_command_handler(struct ptkl_context *ctx) {
+	printf("run: %s\n", ctx->command->name);
+}
+
+void eval_command_handler(struct ptkl_context *ctx) {
+	printf("eval: %s\n", ctx->command->name);
+}
+
+int main(int argc, char **argv) {
+
+	// Set up commands and options
+	//
+	// root command
 	struct ptkl_option eval_option = {
-		.type = OPT_STRING,
+		.value.type = OPT_STRING,
 		.short_opt = "e",
 		.long_opt = "eval",
 		.help = "Evaluate <expr>",
 	};
 	struct ptkl_option version_option = {
-		.type = OPT_STRING,
+		.value.type = OPT_STRING,
 		.short_opt = "v",
 		.long_opt = "version",
 		.help = "Print version",
 	};
 	struct ptkl_option help_option = {
-		.type = OPT_BOOL,
+		.value.type = OPT_BOOL,
 		.short_opt = "h",
 		.long_opt = "help",
 		.help = "Print this help",
 	};
+	struct ptkl_command root_cmd = {
+		.name = "root",
+		.handler = root_command_handler,
+	};
+	ptkl_command_add_option(&root_cmd, &eval_option);
+	ptkl_command_add_option(&root_cmd, &version_option);
+	ptkl_command_add_option(&root_cmd, &help_option);
+	//
+	// run command
+	struct ptkl_command run_cmd = {
+		.name = "run",
+		.handler = run_command_handler,
+	};
+	ptkl_command_add_subcommand(&root_cmd, &run_cmd);
+	//
+	// eval command
+	struct ptkl_command eval_cmd = {
+		.name = "eval",
+		.handler = eval_command_handler,
+	};
+	ptkl_command_add_subcommand(&root_cmd, &eval_cmd);
+	//
+	// cli
+	struct ptkl_cli cli = {
+		.name = PTKL,
+		.version = CONFIG_VERSION,
+		.command = &root_cmd,
+	};
 
-	ptkl_add_option(&cli, &eval_option);
-	ptkl_add_option(&cli, &version_option);
-	ptkl_add_option(&cli, &help_option);
-
-	ptkl_print_help(&cli);
+	ptkl_cli_help(&cli);
 
 	return 0;
 }
