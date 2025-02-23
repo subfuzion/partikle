@@ -268,33 +268,31 @@ void run(struct cliconfig *config) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+/// Help
 
 #define COLUMN_SEP "  "
 
 
 static void print_option_help(const struct ptkl_option *opt,
-							  const unsigned max_long_opt_width) {
+							  const unsigned max_field_width) {
 	printf(COLUMN_SEP "-%s"
 		   COLUMN_SEP "--%-*s"
 		   COLUMN_SEP "%s"
 		   "\n",
-		   opt->short_opt, max_long_opt_width, opt->long_opt, opt->help
+		   opt->short_opt, max_field_width, opt->long_opt, opt->help
 	);
 }
 
 
-static void print_command_help(const struct ptkl_command *cmd, bool detailed) {
-	printf(COLUMN_SEP "-%s"
+static void print_command_help(const struct ptkl_command *cmd,
+							   const unsigned max_field_width) {
+	printf(COLUMN_SEP "%-*s"
+		   COLUMN_SEP "%-s"
 		   "\n",
-		   cmd->name
+		   max_field_width + 6, cmd->name, cmd->help
 	);
-	if (detailed) {
-		// print subcommands
-	}
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
 
 // hidden options:
 //
@@ -319,22 +317,24 @@ void ptkl_cli_help(const struct ptkl_cli *cli) {
 		printf("  %s [options]\n", cli->name);
 	}
 
+	// Compute column width (min width = 10)
+	unsigned longest_field_width = 10;
+
 	printf("\noptions:\n"); {
 		struct ptkl_command *root_cmd = cli->command;
 		struct ptkl_option *opt = root_cmd->options;
 
 		// Compute long option column width (min width = 10)
-		unsigned long_opt_col_width = 10;
-
 		while (opt) {
 			const unsigned width = strlen(opt->long_opt);
-			if (width > long_opt_col_width) long_opt_col_width = width;
+			if (width > longest_field_width) longest_field_width = width;
 			opt = opt->next;
 		}
 
+		// Print each option
 		opt = root_cmd->options;
 		while (opt) {
-			print_option_help(opt, long_opt_col_width);
+			print_option_help(opt, longest_field_width);
 			opt = opt->next;
 		}
 	}
@@ -343,8 +343,18 @@ void ptkl_cli_help(const struct ptkl_cli *cli) {
 		// printf("  eval <expr> [args...]\n");
 		// printf("  run <file> [args...]\n");
 		struct ptkl_command *cmd = cli->command->subcommand;
+
+		// Compute command column width (min width = 10)
 		while (cmd) {
-			print_command_help(cmd, false);
+			const unsigned width = strlen(cmd->name);
+			if (width > longest_field_width) longest_field_width = width;
+			cmd = cmd->next;
+		}
+
+		// Print each command
+		cmd = cli->command->subcommand;
+		while (cmd) {
+			print_command_help(cmd, longest_field_width);
 			cmd = cmd->next;
 		}
 	}
@@ -352,20 +362,20 @@ void ptkl_cli_help(const struct ptkl_cli *cli) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
+/// Commands
 
-// void ptkl_add_option(struct ptkl_cli *cli, struct ptkl_option *opt) {
-// 	if (!cli->options) {
-// 		cli->options = opt;
-// 		return;
-// 	}
-// 	struct ptkl_option *o = cli->options;
-// 	while (o->next) {
-// 		o = o->next;
-// 	}
-// 	o->next = opt;
-// }
+void ptkl_command_add_arg(struct ptkl_command *cmd, struct ptkl_arg *arg) {
+	if (!cmd->args) {
+		cmd->args = arg;
+		return;
+	}
+	struct ptkl_arg *a = cmd->args;
+	while (a->next) {
+		a = a->next;
+	}
+	a->next = arg;
+}
 
-////////////////////////////////////////////////////////////////////////////////
 
 void ptkl_command_add_option(struct ptkl_command *cmd,
 							 struct ptkl_option *opt) {

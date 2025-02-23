@@ -424,69 +424,92 @@ fail:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void root_command_handler(struct ptkl_context *ctx) {
+static void root_command_handler(struct ptkl_context *ctx) {
 	printf("root: %s\n", ctx->command->name);
 }
 
-void run_command_handler(struct ptkl_context *ctx) {
+
+static void run_command_handler(struct ptkl_context *ctx) {
 	printf("run: %s\n", ctx->command->name);
 }
 
-void eval_command_handler(struct ptkl_context *ctx) {
+
+static void eval_command_handler(struct ptkl_context *ctx) {
 	printf("eval: %s\n", ctx->command->name);
 }
 
-int main(int argc, char **argv) {
 
-	// Set up commands and options
-	//
+static void repl_command_handler(struct ptkl_context *ctx) {
+	printf("repl: %s\n", ctx->command->name);
+}
+
+int main(int argc, char **argv) {
+	// run command
+	struct ptkl_command run_cmd = {
+		.name = "run",
+		.help = "Run JavaScript program",
+		.handler = run_command_handler,
+	};
+	struct ptkl_arg run_file_arg = {
+		.name = "file",
+	};
+	struct ptkl_arg run_file_extra_args = {
+		.name = "args",
+		.optional = true,
+		.multi = true,
+	};
+	// eval command
+	struct ptkl_command eval_cmd = {
+		.name = "eval",
+		.help = "Evaluate JavaScript string",
+		.handler = eval_command_handler,
+	};
+	// repl command
+	struct ptkl_command repl_cmd = {
+		.name = "repl",
+		.help = "Run interactive JavaScript Read-Eval-Print Loop (REPL)",
+		.handler = repl_command_handler,
+	};
 	// root command
+	struct ptkl_command root_cmd = {
+		.name = "root",
+		.handler = root_command_handler,
+	};
 	struct ptkl_option eval_option = {
-		.value.type = OPT_STRING,
+		.type = OPT_STRING,
 		.short_opt = "e",
 		.long_opt = "eval",
 		.help = "Evaluate <expr>",
 	};
 	struct ptkl_option version_option = {
-		.value.type = OPT_STRING,
+		.type = OPT_STRING,
 		.short_opt = "v",
 		.long_opt = "version",
 		.help = "Print version",
 	};
 	struct ptkl_option help_option = {
-		.value.type = OPT_BOOL,
+		.type = OPT_BOOL,
 		.short_opt = "h",
 		.long_opt = "help",
 		.help = "Print this help",
 	};
-	struct ptkl_command root_cmd = {
-		.name = "root",
-		.handler = root_command_handler,
-	};
-	ptkl_command_add_option(&root_cmd, &eval_option);
-	ptkl_command_add_option(&root_cmd, &version_option);
-	ptkl_command_add_option(&root_cmd, &help_option);
-	//
-	// run command
-	struct ptkl_command run_cmd = {
-		.name = "run",
-		.handler = run_command_handler,
-	};
-	ptkl_command_add_subcommand(&root_cmd, &run_cmd);
-	//
-	// eval command
-	struct ptkl_command eval_cmd = {
-		.name = "eval",
-		.handler = eval_command_handler,
-	};
-	ptkl_command_add_subcommand(&root_cmd, &eval_cmd);
-	//
 	// cli
 	struct ptkl_cli cli = {
 		.name = PTKL,
 		.version = CONFIG_VERSION,
 		.command = &root_cmd,
 	};
+
+	ptkl_command_add_arg(&run_cmd, &run_file_arg);
+	ptkl_command_add_arg(&run_cmd, &run_file_extra_args);
+
+	ptkl_command_add_option(&root_cmd, &eval_option);
+	ptkl_command_add_option(&root_cmd, &version_option);
+	ptkl_command_add_option(&root_cmd, &help_option);
+
+	ptkl_command_add_subcommand(&root_cmd, &run_cmd);
+	ptkl_command_add_subcommand(&root_cmd, &eval_cmd);
+	ptkl_command_add_subcommand(&root_cmd, &repl_cmd);
 
 	ptkl_cli_help(&cli);
 

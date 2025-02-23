@@ -94,8 +94,7 @@ int parse_runtime_args(int argc, char **argv, struct runtime_opts *opts);
 
 // forward declarations
 enum ptkl_parse_type;
-union ptkl_parse_data;
-struct ptkl_parse_value;
+union ptkl_parse_value;
 struct ptkl_error;
 struct ptkl_context;
 struct ptkl_cli;
@@ -103,24 +102,24 @@ struct ptkl_arg;
 struct ptkl_option;
 struct ptkl_command;
 
+// Determines how to parse a command line string
 enum ptkl_parse_type {
 	OPT_STRING,
 	OPT_BOOL,
 	OPT_INT,
 };
 
-union ptkl_parse_data {
+// Stores the value of the parsed command line string
+union ptkl_parse_value {
 	const char *string;
 	bool boolean;
 	int integer;
-	union ptkl_parse_data *list;
+
+	// Used when `multi` is set for arguments and options
+	union ptkl_parse_value *next;
 };
 
-struct ptkl_parse_value {
-	enum ptkl_parse_type type;
-	union ptkl_parse_data *data;
-};
-
+// Stores an error message (such as a parse error)
 struct ptkl_error {
 	const char *msg;
 
@@ -128,6 +127,7 @@ struct ptkl_error {
 	struct ptkl_command_error *next;
 };
 
+// Context for command handler functions
 struct ptkl_context {
 	struct ptkl_cli *cli;
 	struct ptkl_command *command;
@@ -136,6 +136,7 @@ struct ptkl_context {
 	struct ptkl_error *errors;
 };
 
+// Top level CLI data structure
 struct ptkl_cli {
 	const char *name;
 	const char *version;
@@ -146,36 +147,13 @@ struct ptkl_cli {
 	struct ptkl_command *command;
 };
 
-struct ptkl_option {
-	const char *short_opt;
-	const char *long_opt;
-	const char *help;
-	bool multi;
-	struct ptkl_parse_value value;
-
-	void (*handler)(const struct ptkl_option *opt);
-
-	// internal
-	struct ptkl_option *next;
-};
-
-struct ptkl_arg {
-	const char *name;
-	bool required;
-	bool multi;
-	struct ptkl_parse_value value;
-
-	// internal
-	struct ptkl_arg *next;
-};
-
+// A CLI command spec
 struct ptkl_command {
-	const char *name; // auto assigned for root commandA
+	const char *name;
 	const char *help;
 	const char *category;
 	const char *example;
 
-	void (*hook)(struct ptkl_command *cmd);
 	void (*handler)(struct ptkl_context *ctx);
 
 	// internal
@@ -186,11 +164,42 @@ struct ptkl_command {
 	struct ptkl_arg *args;
 };
 
+// A command option spec
+struct ptkl_option {
+	const char *short_opt;
+	const char *long_opt;
+	const char *help;
+	bool multi;
+	enum ptkl_parse_type type;
+
+	// Set after parsing the command line
+	union ptkl_parse_value value;
+
+	// internal
+	struct ptkl_option *next;
+};
+
+// A command argument spec
+struct ptkl_arg {
+	const char *name;
+	bool optional;
+	bool multi;
+	enum ptkl_parse_type type;
+
+	// Set after parsing the command line
+	union ptkl_parse_value value;
+
+	// internal
+	struct ptkl_arg *next;
+};
+
 void ptkl_cli_add_command(struct ptkl_cli *cli, struct ptkl_command *cmd);
+void ptkl_command_add_arg(struct ptkl_command *cmd, struct ptkl_arg *arg);
 void ptkl_command_add_option(struct ptkl_command *cmd, struct ptkl_option *opt);
 void ptkl_command_add_subcommand(struct ptkl_command *cmd,
 								 struct ptkl_command *subcommand);
 
 void ptkl_cli_help(const struct ptkl_cli *cli);
+
 
 #endif  /* ARGS_H */
