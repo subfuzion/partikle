@@ -443,6 +443,10 @@ static void repl_command_handler(struct ptkl_context *ctx) {
 	printf("repl: %s\n", ctx->command->name);
 }
 
+static void shell_command_handler(struct ptkl_context *ctx) {
+	printf("shell: %s\n", ctx->command->name);
+}
+
 int main(int argc, char **argv) {
 	// run command
 	struct ptkl_command run_cmd = {
@@ -467,8 +471,14 @@ int main(int argc, char **argv) {
 	// repl command
 	struct ptkl_command repl_cmd = {
 		.name = "repl",
-		.help = "Run interactive JavaScript Read-Eval-Print Loop (REPL)",
+		.help = "Start JavaScript Read-Eval-Print Loop (REPL)",
 		.handler = repl_command_handler,
+	};
+	// shell command
+	struct ptkl_command shell_cmd = {
+		.name = "shell",
+		.help = "Start interactive shell",
+		.handler = shell_command_handler,
 	};
 	// root command
 	struct ptkl_command root_cmd = {
@@ -510,6 +520,7 @@ int main(int argc, char **argv) {
 	ptkl_command_add_subcommand(&root_cmd, &run_cmd);
 	ptkl_command_add_subcommand(&root_cmd, &eval_cmd);
 	ptkl_command_add_subcommand(&root_cmd, &repl_cmd);
+	ptkl_command_add_subcommand(&root_cmd, &shell_cmd);
 
 	ptkl_cli_help(&cli);
 
