@@ -136,7 +136,7 @@ struct ptkl_context {
 	struct ptkl_error *errors;
 };
 
-// Top level CLI data structure
+// The top level CLI
 struct ptkl_cli {
 	const char *name;
 	const char *version;
@@ -147,7 +147,7 @@ struct ptkl_cli {
 	struct ptkl_command *command;
 };
 
-// A CLI command spec
+// A CLI command
 struct ptkl_command {
 	const char *name;
 	const char *help;
@@ -162,9 +162,10 @@ struct ptkl_command {
 	struct ptkl_command *subcommand;
 	struct ptkl_option *options;
 	struct ptkl_arg *args;
+	char *usage;
 };
 
-// A command option spec
+// A command option
 struct ptkl_option {
 	const char *short_opt;
 	const char *long_opt;
@@ -179,7 +180,7 @@ struct ptkl_option {
 	struct ptkl_option *next;
 };
 
-// A command argument spec
+// A command argument
 struct ptkl_arg {
 	const char *name;
 	bool optional;

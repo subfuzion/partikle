@@ -443,8 +443,8 @@ static void repl_command_handler(struct ptkl_context *ctx) {
 	printf("repl: %s\n", ctx->command->name);
 }
 
-static void shell_command_handler(struct ptkl_context *ctx) {
-	printf("shell: %s\n", ctx->command->name);
+static void console_command_handler(struct ptkl_context *ctx) {
+	printf("console: %s\n", ctx->command->name);
 }
 
 int main(int argc, char **argv) {
@@ -468,28 +468,31 @@ int main(int argc, char **argv) {
 		.help = "Evaluate JavaScript string",
 		.handler = eval_command_handler,
 	};
+	struct ptkl_arg eval_expr_arg = {
+		.name = "expr",
+	};
 	// repl command
 	struct ptkl_command repl_cmd = {
 		.name = "repl",
 		.help = "Start JavaScript Read-Eval-Print Loop (REPL)",
 		.handler = repl_command_handler,
 	};
-	// shell command
-	struct ptkl_command shell_cmd = {
-		.name = "shell",
-		.help = "Start interactive shell",
-		.handler = shell_command_handler,
+	// console command
+	struct ptkl_command console_cmd = {
+		.name = "console",
+		.help = "Start interactive console",
+		.handler = console_command_handler,
 	};
 	// root command
 	struct ptkl_command root_cmd = {
 		.name = "root",
 		.handler = root_command_handler,
-	};
-	struct ptkl_option eval_option = {
-		.type = OPT_STRING,
-		.short_opt = "e",
-		.long_opt = "eval",
-		.help = "Evaluate <expr>",
+		.help = "Partikle is a lightweight runtime for modern JavaScript.\n"
+		        "Run a command, file, expression, or start the console.\n\n"
+		        "  " PTKL " [options] <command> [args...]\n"
+		        "  " PTKL " [options] <file> [args...]       => " PTKL " run\n"
+		        "  " PTKL " [options] <expr> [args...]       => " PTKL " eval\n"
+		        "  " PTKL " [options]                        => " PTKL " console\n",
 	};
 	struct ptkl_option version_option = {
 		.type = OPT_STRING,
@@ -501,7 +504,7 @@ int main(int argc, char **argv) {
 		.type = OPT_BOOL,
 		.short_opt = "h",
 		.long_opt = "help",
-		.help = "Print this help",
+		.help = "Print help",
 	};
 	// cli
 	struct ptkl_cli cli = {
@@ -513,14 +516,15 @@ int main(int argc, char **argv) {
 	ptkl_command_add_arg(&run_cmd, &run_file_arg);
 	ptkl_command_add_arg(&run_cmd, &run_file_extra_args);
 
-	ptkl_command_add_option(&root_cmd, &eval_option);
+	ptkl_command_add_arg(&eval_cmd, &eval_expr_arg);
+
 	ptkl_command_add_option(&root_cmd, &version_option);
 	ptkl_command_add_option(&root_cmd, &help_option);
 
 	ptkl_command_add_subcommand(&root_cmd, &run_cmd);
 	ptkl_command_add_subcommand(&root_cmd, &eval_cmd);
 	ptkl_command_add_subcommand(&root_cmd, &repl_cmd);
-	ptkl_command_add_subcommand(&root_cmd, &shell_cmd);
+	ptkl_command_add_subcommand(&root_cmd, &console_cmd);
 
 	ptkl_cli_help(&cli);
 

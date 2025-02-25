@@ -24,6 +24,7 @@
  * THE SOFTWARE.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ptklcli.h"
@@ -279,18 +280,117 @@ static void print_option_help(const struct ptkl_option *opt,
 		   COLUMN_SEP "--%-*s"
 		   COLUMN_SEP "%s"
 		   "\n",
-		   opt->short_opt, max_field_width, opt->long_opt, opt->help
+		   opt->short_opt, max_field_width - 4, opt->long_opt, opt->help
 	);
 }
 
 
-static void print_command_help(const struct ptkl_command *cmd,
+static void print_subcommand_help(const struct ptkl_command *cmd,
 							   const unsigned max_field_width) {
 	printf(COLUMN_SEP "%-*s"
 		   COLUMN_SEP "%-s"
 		   "\n",
-		   max_field_width + 6, cmd->name, cmd->help
+		   max_field_width + 2, cmd->usage, cmd->help
 	);
+}
+
+
+static unsigned min(const unsigned a, const unsigned b) {
+	return a < b ? a : b;
+}
+
+
+// Updates the command's `usage` field.
+//
+// The usage string is formatted based on the command's name and args fields.
+// If the total length of the usage string would be longer than the field's
+// capacity, then a single set of ellipses ("...") is appended instead of a
+// series of formatted args.
+//
+// The caller must ensure the following:
+//
+// 1. cmd->usage points to a character buffer large
+//    enough for a formatted usage string (based on cmd->name and cmd->args).
+//
+// 2. size is the total length of the allocated buffer (including space for a
+// null terminator ('\0)).
+//
+static void cmdusage(const struct ptkl_command *cmd, const unsigned size) {
+	const unsigned cap = size - 1;
+	unsigned len = 0;
+	char *usage = cmd->usage;
+	memset(usage, 0, sizeof(char) * size);
+	strncpy(usage, cmd->name, cap - len);
+	len += strlen(cmd->name);
+	const struct ptkl_arg *arg = cmd->args;
+	while (arg && len < cap) {
+		strcat(usage, " ");
+		++len;
+		if (len < cap) {
+			strcat(usage, arg->optional ? "[" : "<");
+			++len;
+		}
+		unsigned m = min(1 + strlen(arg->name), cap - len);
+		strncat(usage, arg->name, m);
+		len += m;
+		if (len < cap) {
+			strcat(usage, arg->optional ? "]" : ">");
+			++len;
+		}
+		arg = arg->next;
+	}
+	if (len >= cap) {
+		memset(usage, 0, sizeof(char) * size);
+		sprintf(usage, "%*s ...", min(cap - 4, strlen(cmd->name)), cmd->name);
+	}
+}
+
+
+static void print_command_help(const struct ptkl_command *cmd) {
+	if (cmd->help) {
+		printf("%s\n", cmd->help);
+	}
+
+	// Field width to ensure gap before printing the help column.
+	// The initial value is the minimum width for an aesthetic appearance.
+	// The same value is used for aligning both option and command help.
+	unsigned longest_field_width = 10; {
+
+		// Determine max column width for long options
+		const struct ptkl_option *opt = cmd->options;
+		while (opt) {
+			const unsigned width = strlen(opt->long_opt);
+			if (width > longest_field_width) longest_field_width = width;
+			opt = opt->next;
+		}
+
+		// Compute command usage strings and determine max column width
+		struct ptkl_command *subcmd = cmd->subcommand;
+		while (subcmd) {
+			const unsigned cap = 32;
+			subcmd->usage = (char *) calloc(cap + 1, sizeof(char));
+			cmdusage(subcmd, cap);
+			const unsigned width = strlen(subcmd->usage);
+			if (width > longest_field_width) longest_field_width = width;
+			subcmd = subcmd->next;
+		}
+	}
+
+	printf("\nOptions:\n"); {
+		const struct ptkl_option *opt = cmd->options;
+		while (opt) {
+			print_option_help(opt, longest_field_width);
+			opt = opt->next;
+		}
+	}
+
+	printf("\nCommands:\n"); {
+		const struct ptkl_command *subcmd = cmd->subcommand;
+		while (subcmd) {
+			print_subcommand_help(subcmd, longest_field_width);
+			subcmd = subcmd->next;
+		}
+	}
 }
 
 
@@ -309,55 +409,11 @@ static void print_command_help(const struct ptkl_command *cmd,
 //           "-q  --quit                 just instantiate the interpreter and quit\n"
 //
 void ptkl_cli_help(const struct ptkl_cli *cli) {
+	const struct ptkl_command *root_cmd = cli->command;
 
-	printf("Partikle Runtime (version %s)\n\n", cli->version); {
-		printf("  %s [options] <command> [args...]\n", cli->name);
-		printf("  %s [options] <expr> [args...]\n", cli->name);
-		printf("  %s [options] <file> [args...]\n", cli->name);
-		printf("  %s [options]\n", cli->name);
-	}
+	printf("Partikle Runtime (version %s)\n\n", cli->version);
 
-	// Compute column width (min width = 10)
-	unsigned longest_field_width = 10;
-
-	printf("\noptions:\n"); {
-		struct ptkl_command *root_cmd = cli->command;
-		struct ptkl_option *opt = root_cmd->options;
-
-		// Compute long option column width (min width = 10)
-		while (opt) {
-			const unsigned width = strlen(opt->long_opt);
-			if (width > longest_field_width) longest_field_width = width;
-			opt = opt->next;
-		}
-
-		// Print each option
-		opt = root_cmd->options;
-		while (opt) {
-			print_option_help(opt, longest_field_width);
-			opt = opt->next;
-		}
-	}
-
-	printf("\nsubcommands:\n"); {
-		// printf("  eval <expr> [args...]\n");
-		// printf("  run <file> [args...]\n");
-		struct ptkl_command *cmd = cli->command->subcommand;
-
-		// Compute command column width (min width = 10)
-		while (cmd) {
-			const unsigned width = strlen(cmd->name);
-			if (width > longest_field_width) longest_field_width = width;
-			cmd = cmd->next;
-		}
-
-		// Print each command
-		cmd = cli->command->subcommand;
-		while (cmd) {
-			print_command_help(cmd, longest_field_width);
-			cmd = cmd->next;
-		}
-	}
+	print_command_help(root_cmd);
 }
 
 
