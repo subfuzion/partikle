@@ -201,6 +201,21 @@ void ptkl_command_add_subcommand(struct ptkl_command *cmd,
 								 struct ptkl_command *subcommand);
 
 void ptkl_cli_help(const struct ptkl_cli *cli);
+void print_command_help(const struct ptkl_command *cmd);
+
+void ptkl_cli_destroy(struct ptkl_cli *cli);
+
+struct node {
+	void *data;
+	struct node *next;
+};
+
+struct bucket {
+	struct node *head;
+	struct node *tail;
+};
+
+void bucket_add(struct bucket *bucket, void *data);
 
 
 #endif  /* ARGS_H */

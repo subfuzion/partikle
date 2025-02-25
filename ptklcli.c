@@ -271,7 +271,55 @@ void run(struct cliconfig *config) {
 ////////////////////////////////////////////////////////////////////////////////
 /// Help
 
+
 #define COLUMN_SEP "  "
+
+
+static unsigned min(const unsigned a, const unsigned b) {
+	return a < b ? a : b;
+}
+
+
+// `usage` is a character buffer that is filled with a formatted string based on
+// the command's name and args.
+//
+// `size` is the character buffer's capacity plus 1 for null termination.
+//
+// If the length of the full usage string would exceed the buffer's capacity,
+// then " ..." is appended to the command name instead of args.
+static void get_command_usage(const struct ptkl_command *cmd, char *usage,
+							  const unsigned size) {
+	memset(usage, 0, sizeof(char) * size);
+	const unsigned cap = size - 1;
+	unsigned len = 0;
+	strncpy(usage, cmd->name, cap);
+	len += strlen(cmd->name);
+	const struct ptkl_arg *arg = cmd->args;
+	while (arg && len < cap) {
+		strcat(usage, " ");
+		++len;
+		if (len >= cap) goto ellide;
+
+		strcat(usage, arg->optional ? "[" : "<");
+		++len;
+		if (len >= cap) goto ellide;
+
+		unsigned n = strlen(arg->name);
+		if (len + n >= cap) goto ellide;
+
+		strncat(usage, arg->name, n);
+		len += n;
+		if (len >= cap) goto ellide;
+
+		strcat(usage, arg->optional ? "]" : ">");
+		++len;
+		arg = arg->next;
+	}
+	return;
+ellide:
+	memset(usage, 0, sizeof(char) * size);
+	sprintf(usage, "%*s ...", min(cap - 4, strlen(cmd->name)), cmd->name);
+}
 
 
 static void print_option_help(const struct ptkl_option *opt,
@@ -286,69 +334,29 @@ static void print_option_help(const struct ptkl_option *opt,
 
 
 static void print_subcommand_help(const struct ptkl_command *cmd,
-							   const unsigned max_field_width) {
+								  const char *usage,
+								  const unsigned max_field_width) {
 	printf(COLUMN_SEP "%-*s"
 		   COLUMN_SEP "%-s"
 		   "\n",
-		   max_field_width + 2, cmd->usage, cmd->help
+		   max_field_width + 2, usage, cmd->help
 	);
 }
 
 
-static unsigned min(const unsigned a, const unsigned b) {
-	return a < b ? a : b;
-}
+void print_command_help(const struct ptkl_command *cmd) {
+	// usage strings are computed dynamically from command name and args
+	const unsigned size = 80;
+	char usage[size];
 
-
-// Updates the command's `usage` field.
-//
-// The usage string is formatted based on the command's name and args fields.
-// If the total length of the usage string would be longer than the field's
-// capacity, then a single set of ellipses ("...") is appended instead of a
-// series of formatted args.
-//
-// The caller must ensure the following:
-//
-// 1. cmd->usage points to a character buffer large
-//    enough for a formatted usage string (based on cmd->name and cmd->args).
-//
-// 2. size is the total length of the allocated buffer (including space for a
-// null terminator ('\0)).
-//
-static void cmdusage(const struct ptkl_command *cmd, const unsigned size) {
-	const unsigned cap = size - 1;
-	unsigned len = 0;
-	char *usage = cmd->usage;
-	memset(usage, 0, sizeof(char) * size);
-	strncpy(usage, cmd->name, cap - len);
-	len += strlen(cmd->name);
-	const struct ptkl_arg *arg = cmd->args;
-	while (arg && len < cap) {
-		strcat(usage, " ");
-		++len;
-		if (len < cap) {
-			strcat(usage, arg->optional ? "[" : "<");
-			++len;
-		}
-		unsigned m = min(1 + strlen(arg->name), cap - len);
-		strncat(usage, arg->name, m);
-		len += m;
-		if (len < cap) {
-			strcat(usage, arg->optional ? "]" : ">");
-			++len;
-		}
-		arg = arg->next;
-	}
-	if (len >= cap) {
-		memset(usage, 0, sizeof(char) * size);
-		sprintf(usage, "%*s ...", min(cap - 4, strlen(cmd->name)), cmd->name);
-	}
-}
-
-
-static void print_command_help(const struct ptkl_command *cmd) {
 	if (cmd->help) {
-		printf("%s\n", cmd->help);
+		printf("%s.\n", cmd->help);
+	}
+
+	// don't print usage for root command
+	if (cmd->parent) {
+		get_command_usage(cmd, usage, size);
+		printf("\n  %s\n", usage);
 	}
 
 	// Field width to ensure gap before printing the help column.
@@ -365,18 +373,18 @@ static void print_command_help(const struct ptkl_command *cmd) {
 		}
 
 		// Compute command usage strings and determine max column width
-		struct ptkl_command *subcmd = cmd->subcommand;
+		const struct ptkl_command *subcmd = cmd->subcommand;
 		while (subcmd) {
-			const unsigned cap = 32;
-			subcmd->usage = (char *) calloc(cap + 1, sizeof(char));
-			cmdusage(subcmd, cap);
-			const unsigned width = strlen(subcmd->usage);
+			get_command_usage(subcmd, usage, size);
+			const unsigned width = strlen(usage);
 			if (width > longest_field_width) longest_field_width = width;
 			subcmd = subcmd->next;
 		}
 	}
 
-	printf("\nOptions:\n"); {
+
+	if (cmd->options) {
+		printf("\nOptions:\n");
 		const struct ptkl_option *opt = cmd->options;
 		while (opt) {
 			print_option_help(opt, longest_field_width);
@@ -384,10 +392,12 @@ static void print_command_help(const struct ptkl_command *cmd) {
 		}
 	}
 
-	printf("\nCommands:\n"); {
+	if (cmd->subcommand) {
+		printf("\nSubcommands:\n");
 		const struct ptkl_command *subcmd = cmd->subcommand;
 		while (subcmd) {
-			print_subcommand_help(subcmd, longest_field_width);
+			get_command_usage(subcmd, usage, size);
+			print_subcommand_help(subcmd, usage, longest_field_width);
 			subcmd = subcmd->next;
 		}
 	}
@@ -458,4 +468,23 @@ void ptkl_command_add_subcommand(struct ptkl_command *cmd,
 		c = c->next;
 	}
 	c->next = subcommand;
+}
+
+
+static void ptkl_command_destroy(struct ptkl_command *cmd) {
+	if (cmd->usage) {
+		printf("freeing usage string for: %s\n", cmd->name);
+		free(cmd->usage);
+		cmd->usage = nullptr;
+	}
+	if (cmd->subcommand) ptkl_command_destroy(cmd->subcommand);
+	if (cmd->next) ptkl_command_destroy(cmd->next);
+}
+
+
+void ptkl_cli_destroy(struct ptkl_cli *cli) {
+	if (cli->command) {
+		ptkl_command_destroy(cli->command);
+		cli->command = nullptr;
+	}
 }

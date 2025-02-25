@@ -451,7 +451,7 @@ int main(int argc, char **argv) {
 	// run command
 	struct ptkl_command run_cmd = {
 		.name = "run",
-		.help = "Run JavaScript program",
+		.help = "Run a JavaScript program",
 		.handler = run_command_handler,
 	};
 	struct ptkl_arg run_file_arg = {
@@ -465,7 +465,7 @@ int main(int argc, char **argv) {
 	// eval command
 	struct ptkl_command eval_cmd = {
 		.name = "eval",
-		.help = "Evaluate JavaScript string",
+		.help = "Evaluate a JavaScript string",
 		.handler = eval_command_handler,
 	};
 	struct ptkl_arg eval_expr_arg = {
@@ -474,7 +474,7 @@ int main(int argc, char **argv) {
 	// repl command
 	struct ptkl_command repl_cmd = {
 		.name = "repl",
-		.help = "Start JavaScript Read-Eval-Print Loop (REPL)",
+		.help = "Start a JavaScript Read-Eval-Print Loop (REPL)",
 		.handler = repl_command_handler,
 	};
 	// console command
@@ -488,7 +488,7 @@ int main(int argc, char **argv) {
 		.name = "root",
 		.handler = root_command_handler,
 		.help = "Partikle is a lightweight runtime for modern JavaScript.\n"
-		        "Run a command, file, expression, or start the console.\n\n"
+		        "Run a subcommand, file, expression, or start the console.\n\n"
 		        "  " PTKL " [options] <command> [args...]\n"
 		        "  " PTKL " [options] <file> [args...]       => " PTKL " run\n"
 		        "  " PTKL " [options] <expr> [args...]       => " PTKL " eval\n"
@@ -527,6 +527,9 @@ int main(int argc, char **argv) {
 	ptkl_command_add_subcommand(&root_cmd, &console_cmd);
 
 	ptkl_cli_help(&cli);
+	//print_command_help(&run_cmd);
+
+	//ptkl_cli_destroy(&cli);
 
 	return 0;
 }
