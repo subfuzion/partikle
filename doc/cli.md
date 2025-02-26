@@ -19,9 +19,9 @@ This feature should be used sparingly (if at all) in practice.
 
 - All options are applied to the runtime configuration before command execution.
   The CLI will exit with an error if:
-  - An option is configured by more than one command since this is confusing and
-    most likely unintentional
-  - An option is not configured by any command (unrecognized option)
+  - An option is configured by more than one command since this is ambiguous and
+    most likely unintentional (options must be unique)
+  - An option is not configured by any command (options must be valid)
 
 - If the help option (`-h`, `--help`) is set, the help message for the last
   command in the command chain is printed and the CLI exits with a normal

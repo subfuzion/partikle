@@ -289,11 +289,13 @@ static unsigned min(const unsigned a, const unsigned b) {
 // then " ..." is appended to the command name instead of args.
 static void get_command_usage(const struct ptkl_command *cmd, char *usage,
 							  const unsigned size) {
-	memset(usage, 0, sizeof(char) * size);
-	const unsigned cap = size - 1;
 	unsigned len = 0;
+	const unsigned cap = size - 1;
+	usage[0] = '\0';
+
 	strncpy(usage, cmd->name, cap);
 	len += strlen(cmd->name);
+
 	const struct ptkl_arg *arg = cmd->args;
 	while (arg && len < cap) {
 		strcat(usage, " ");
@@ -315,7 +317,9 @@ static void get_command_usage(const struct ptkl_command *cmd, char *usage,
 		++len;
 		arg = arg->next;
 	}
+	usage[len] = '\0';
 	return;
+
 ellide:
 	memset(usage, 0, sizeof(char) * size);
 	sprintf(usage, "%*s ...", min(cap - 4, strlen(cmd->name)), cmd->name);
@@ -324,7 +328,7 @@ ellide:
 
 static void print_option_help(const struct ptkl_option *opt,
 							  const unsigned max_field_width) {
-	printf(COLUMN_SEP "-%s"
+	printf(COLUMN_SEP "-%c"
 		   COLUMN_SEP "--%-*s"
 		   COLUMN_SEP "%s"
 		   "\n",
@@ -445,6 +449,7 @@ void ptkl_command_add_arg(struct ptkl_command *cmd, struct ptkl_arg *arg) {
 
 void ptkl_command_add_option(struct ptkl_command *cmd,
 							 struct ptkl_option *opt) {
+	opt->command = cmd;
 	if (!cmd->options) {
 		cmd->options = opt;
 		return;

@@ -443,11 +443,16 @@ static void repl_command_handler(struct ptkl_context *ctx) {
 	printf("repl: %s\n", ctx->command->name);
 }
 
+
 static void console_command_handler(struct ptkl_context *ctx) {
 	printf("console: %s\n", ctx->command->name);
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+
 int main(int argc, char **argv) {
+
 	// run command
 	struct ptkl_command run_cmd = {
 		.name = "run",
@@ -462,6 +467,9 @@ int main(int argc, char **argv) {
 		.optional = true,
 		.multi = true,
 	};
+	ptkl_command_add_arg(&run_cmd, &run_file_arg);
+	ptkl_command_add_arg(&run_cmd, &run_file_extra_args);
+
 	// eval command
 	struct ptkl_command eval_cmd = {
 		.name = "eval",
@@ -471,38 +479,41 @@ int main(int argc, char **argv) {
 	struct ptkl_arg eval_expr_arg = {
 		.name = "expr",
 	};
+
 	// repl command
 	struct ptkl_command repl_cmd = {
 		.name = "repl",
 		.help = "Start a JavaScript Read-Eval-Print Loop (REPL)",
 		.handler = repl_command_handler,
 	};
+
 	// console command
 	struct ptkl_command console_cmd = {
 		.name = "console",
 		.help = "Start interactive console",
 		.handler = console_command_handler,
 	};
+
 	// root command
 	struct ptkl_command root_cmd = {
 		.name = "root",
 		.handler = root_command_handler,
 		.help = "Partikle is a lightweight runtime for modern JavaScript.\n"
-		        "Run a subcommand, file, expression, or start the console.\n\n"
-		        "  " PTKL " [options] <command> [args...]\n"
-		        "  " PTKL " [options] <file> [args...]       => " PTKL " run\n"
-		        "  " PTKL " [options] <expr> [args...]       => " PTKL " eval\n"
-		        "  " PTKL " [options]                        => " PTKL " console\n",
+		"Run a subcommand, file, expression, or start the console.\n\n"
+		"  " PTKL " [options] <command> [args...]\n"
+		"  " PTKL " [options] <file> [args...]       => " PTKL " run\n"
+		"  " PTKL " [options] <expr> [args...]       => " PTKL " eval\n"
+		"  " PTKL " [options]                        => " PTKL " console\n",
 	};
 	struct ptkl_option version_option = {
 		.type = OPT_STRING,
-		.short_opt = "v",
+		.short_opt = 'v',
 		.long_opt = "version",
 		.help = "Print version",
 	};
 	struct ptkl_option help_option = {
 		.type = OPT_BOOL,
-		.short_opt = "h",
+		.short_opt = 'h',
 		.long_opt = "help",
 		.help = "Print help",
 	};
@@ -512,9 +523,6 @@ int main(int argc, char **argv) {
 		.version = CONFIG_VERSION,
 		.command = &root_cmd,
 	};
-
-	ptkl_command_add_arg(&run_cmd, &run_file_arg);
-	ptkl_command_add_arg(&run_cmd, &run_file_extra_args);
 
 	ptkl_command_add_arg(&eval_cmd, &eval_expr_arg);
 
@@ -526,10 +534,208 @@ int main(int argc, char **argv) {
 	ptkl_command_add_subcommand(&root_cmd, &repl_cmd);
 	ptkl_command_add_subcommand(&root_cmd, &console_cmd);
 
-	ptkl_cli_help(&cli);
+	struct ptkl_option bs_option = {
+		.type = OPT_STRING,
+		.short_opt = 's',
+		.long_opt = "bs",
+		.help = "bs option",
+	};
+	ptkl_command_add_option(&repl_cmd, &bs_option);
+
+	struct ptkl_command foo_cmd = {
+		.name = "foo",
+	};
+	struct ptkl_option foo_option = {
+		.type = OPT_STRING,
+		.short_opt = 'f',
+		.long_opt = "foo",
+		.help = "foo option",
+	};
+	ptkl_command_add_option(&foo_cmd, &foo_option);
+	ptkl_command_add_subcommand(&repl_cmd, &foo_cmd);
+
+	struct ptkl_command bar_cmd = {
+		.name = "bar",
+	};
+	struct ptkl_option bar_option = {
+		.type = OPT_STRING,
+		.short_opt = 'b',
+		.long_opt = "bar",
+		.help = "bar option",
+	};
+	ptkl_command_add_option(&bar_cmd, &bar_option);
+	ptkl_command_add_subcommand(&foo_cmd, &bar_cmd);
+
+	struct ptkl_command baz_cmd = {
+		.name = "baz",
+	};
+	struct ptkl_option baz_option = {
+		.type = OPT_STRING,
+		.short_opt = 'z',
+		.long_opt = "baz",
+		.help = "baz option",
+	};
+	ptkl_command_add_option(&baz_cmd, &baz_option);
+	ptkl_command_add_subcommand(&console_cmd, &baz_cmd);
+
+	//ptkl_cli_help(&cli);
 	//print_command_help(&run_cmd);
 
-	//ptkl_cli_destroy(&cli);
+	return ptkl_cli_run(&cli, argc, argv);
+}
+
+
+// This first pass ensures that all options appear to be valid, meaning that
+// each one is uniquely associated with a command and matches that command's
+// specification for the option. At this point, this doesn't guarantee there
+// won't be a failure later if the command that the option matches isn't the
+// command that is ultimately being invoked. An unlikely but possible failure
+// could arise if an option expects an argument that happens to also match a
+// subcommand; to make the command work, the option should be set using an
+// explicit assignment (form `--foo=bar` instead of `--foo bar`).
+static int process_options(struct ptkl_cli *cli, int argc, char **argv) {
+	int optind = 1;
+	//while (optind < argc && *argv[optind] == '-') {
+	while (optind < argc && *argv[optind]) {
+		printf("%s\n", argv[optind++]);
+	}
+	return 0;
+}
+
+
+//static bool find_option()
+
+
+// Set of options defined by all commands, used to ensure options are unique.
+struct option_node {
+	struct ptkl_option *option;
+	struct option_node *next;
+};
+
+
+static void dbg_print_set(const char *msg, const struct option_node *node) {
+	int i = 0;
+	printf("  %s: set:", msg);
+	while (node) {
+		printf(" #%d(%s -%c --%s)",
+			   ++i,
+			   node->option->command->name,
+			   node->option->short_opt,
+			   node->option->long_opt);
+		node = node->next;
+	}
+	printf("\n");
+}
+
+
+// Insert option into options set; print an error and return false if option is
+// already in the set.
+static bool
+set_insert_option(struct option_node **set, struct option_node *new) {
+	if (!*set) {
+		*set = new;
+		return true;
+	}
+	struct option_node *e = *set;
+	while (e) {
+		if (new->option->short_opt == e->option->short_opt) {
+			printf(
+				"error: short option -%c for %s command is already defined for %s command\n",
+				new->option->short_opt, new->option->command->name,
+				e->option->command->name);
+			return false;
+		}
+		if (new->option->long_opt && e->option->long_opt &&
+			!strcmp(new->option->long_opt, e->option->long_opt)) {
+			printf(
+				"error: long option -%s for %s command is already defined for %s command\n",
+				new->option->long_opt, new->option->command->name,
+				e->option->command->name);
+			return false;
+		}
+		if (e->next)
+			e = e->next;
+		else {
+			e->next = new;
+			break;
+		}
+	}
+	return true;
+}
+
+
+// Recursively scan all commands and populate options set. Returns false if an
+// option is not unique.
+static bool scan_command_options(const struct ptkl_command *cmd,
+								 struct option_node **set) {
+	while (cmd) {
+		struct ptkl_option *opt = cmd->options;
+		while (opt) {
+			// printf("current command: %s, current option: -%c --%s\n",
+			// 	   cmd->name, opt->short_opt, opt->long_opt);
+			struct option_node *node = calloc(1, sizeof(struct option_node));
+			node->option = opt;
+			if (!set_insert_option(set, node)) return false;
+			opt = opt->next;
+		}
+		if (cmd->subcommand) {
+			if (!scan_command_options(cmd->subcommand, set)) return false;
+		}
+		cmd = cmd->next;
+	}
+	return true;
+}
+
+
+int ptkl_cli_run(struct ptkl_cli *cli, int argc, char **argv) {
+	int error_status = 0;
+
+	// Set of options defined by all commands
+	struct option_node *options = nullptr;
+
+	struct ptkl_command *cmd = cli->command;
+
+	if (!scan_command_options(cmd, &options)) goto error;
+	dbg_print_set("final options", options);
+
+	// By default, the expected command is the root command. As options are
+	// parsed from left to right, the expected command can become a descendant
+	// command if it matches the option. All options must be matched along a
+	// direct path from the root to the final descendant command (which will
+	// become the expected command). Once a path is established, any remaining
+	// unmatched options (even if they potentially match a command on another
+	// path) will trigger an error since .
+	// struct ptkl_command *expected_cmd = cli->command;
+	//
+	// //error_status = process_options(cli, argc, argv);
+	// for (auto i = 0; i < argc; i++) {
+	// 	char *arg = argv[i];
+	// 	if (*arg == '-') {
+	// 		if (*(arg+1) == '-') {
+	// 			// long option
+	// 			arg = arg + 2;
+	// 			printf("long option: %s\n", arg);
+	// 		} else {
+	// 			// short option
+	// 			arg = arg + 1;
+	// 			const unsigned n = strnlen(arg, 10);
+	// 			for (auto si = 0; si < n; si++) {
+	// 				printf("short option: %c\n", arg[si]);
+	// 			}
+	// 		}
+	// 	} else {
+	// 		// command arg
+	// 		printf("%s\n", arg);
+	// 	}
+	// }
+	// if (error_status) goto error;
+
+	//while (optind < argc && *argv[optind] == '-') {
+	// while (optind < argc && *argv[optind]) {
+	// }
 
 	return 0;
+
+error:
+	return error_status || 1;
 }

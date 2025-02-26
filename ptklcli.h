@@ -26,6 +26,7 @@
 
 #include "quickjs.h"
 
+
 struct cliconfig {
 	int argc;
 	char **argv;
@@ -167,7 +168,7 @@ struct ptkl_command {
 
 // A command option
 struct ptkl_option {
-	const char *short_opt;
+	const char short_opt;
 	const char *long_opt;
 	const char *help;
 	bool multi;
@@ -177,6 +178,7 @@ struct ptkl_option {
 	union ptkl_parse_value value;
 
 	// internal
+	struct ptkl_command *command;
 	struct ptkl_option *next;
 };
 
@@ -200,6 +202,7 @@ void ptkl_command_add_option(struct ptkl_command *cmd, struct ptkl_option *opt);
 void ptkl_command_add_subcommand(struct ptkl_command *cmd,
 								 struct ptkl_command *subcommand);
 
+int ptkl_cli_run(struct ptkl_cli *cli, int argc, char **argv);
 void ptkl_cli_help(const struct ptkl_cli *cli);
 void print_command_help(const struct ptkl_command *cmd);
 
